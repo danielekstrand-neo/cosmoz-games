@@ -730,10 +730,91 @@
     </div>
 </div>
 
+<script src="supabase-config.js"></script>
 <script>
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     const isTouchDevice = window.matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    const supabaseRuntimeConfig = window.COSMOZ_SUPABASE_CONFIG || {};
     let audioCtx;
+
+    function normalizeSupabaseUrl(value) {
+        const input = String(value || '').trim();
+        if (!input) return '';
+        const dashboardMatch = input.match(/supabase\.com\/dashboard\/project\/([a-z0-9]+)/i);
+        if (dashboardMatch) return `https://${dashboardMatch[1]}.supabase.co`;
+        if (/^[a-z0-9]+$/i.test(input) && !input.includes('.')) return `https://${input}.supabase.co`;
+        return input.replace(/\/$/, '');
+    }
+
+    const supabaseUrl = normalizeSupabaseUrl(supabaseRuntimeConfig.url);
+    const supabaseAnonKey = String(supabaseRuntimeConfig.anonKey || '').trim();
+    const supabaseEnabled = Boolean(supabaseUrl && supabaseAnonKey.includes('.'));
+
+    async function supabaseRequest(path, options = {}) {
+        const { method = 'GET', body } = options;
+        const headers = {
+            apikey: supabaseAnonKey,
+            Authorization: `Bearer ${supabaseAnonKey}`,
+            ...options.headers
+        };
+
+        if (body !== undefined) {
+            headers['Content-Type'] = 'application/json';
+        }
+
+        const response = await fetch(`${supabaseUrl}/rest/v1/${path}`, {
+            method,
+            headers,
+            body: body !== undefined ? JSON.stringify(body) : undefined
+        });
+
+        if (!response.ok) {
+            const message = await response.text();
+            throw new Error(message || `Supabase request failed with ${response.status}`);
+        }
+
+        if (response.status === 204) return null;
+        return response.json();
+    }
+
+    function mapRemoteScore(row) {
+        return {
+            firstName: row.first_name,
+            lastName: row.last_name,
+            alias: row.alias,
+            score: row.score,
+            entryId: row.entry_id
+        };
+    }
+
+    async function loadRemoteHighScores() {
+        if (!supabaseEnabled) return;
+        try {
+            const rows = await supabaseRequest('leaderboard_scores?select=entry_id,first_name,last_name,alias,score&order=score.desc,created_at.asc&limit=20');
+            highScores = Array.isArray(rows) ? rows.map(mapRemoteScore) : [];
+            updateHighScoreUI();
+        } catch (error) {
+            console.warn('Supabase leaderboard load failed, using local fallback.', error);
+        }
+    }
+
+    async function insertRemoteRegistration(registration) {
+        if (!supabaseEnabled) return;
+        await supabaseRequest('registrations', {
+            method: 'POST',
+            headers: { Prefer: 'return=minimal' },
+            body: registration
+        });
+    }
+
+    async function insertRemoteScore(scoreEntry) {
+        if (!supabaseEnabled) return;
+        await supabaseRequest('leaderboard_scores', {
+            method: 'POST',
+            headers: { Prefer: 'return=minimal' },
+            body: scoreEntry
+        });
+    }
 
     function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
 
@@ -797,6 +878,7 @@
     let currentPlayerFirstName = '';
     let currentPlayerLastName = '';
     let currentRegistrationId = '';
+    let currentRegistrationDraft = null;
     let currentSessionIsAdmin = false;
     let demoModeEnabled = false;
     let demoRunning = false;
@@ -1207,10 +1289,13 @@
         if (!isDemo && !isAdmin) {
             const registrations = JSON.parse(localStorage.getItem('neovici_registrations')) || [];
             currentRegistrationId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-            registrations.push({ registrationId: currentRegistrationId, firstName, lastName, company, email, consent: true, photoLinkedinConsent: winnerPhotoConsent, score: 0, timestamp: new Date().toISOString() });
+            const registrationRecord = { registrationId: currentRegistrationId, firstName, lastName, company, email, consent: true, photoLinkedinConsent: winnerPhotoConsent, score: 0, timestamp: new Date().toISOString() };
+            registrations.push(registrationRecord);
             localStorage.setItem('neovici_registrations', JSON.stringify(registrations));
+            currentRegistrationDraft = registrationRecord;
         } else {
             currentRegistrationId = '';
+            currentRegistrationDraft = null;
         }
 
         initAudio(); score = 0; frames = 0; timeRemaining = GAME_DURATION;
@@ -1292,6 +1377,26 @@
         }
         localStorage.setItem('neovici_registrations', JSON.stringify(registrations));
 
+        if (currentRegistrationDraft) {
+            const remoteRegistration = {
+                registration_id: currentRegistrationDraft.registrationId,
+                first_name: currentRegistrationDraft.firstName,
+                last_name: currentRegistrationDraft.lastName,
+                company: currentRegistrationDraft.company || '',
+                email: currentRegistrationDraft.email,
+                consent: true,
+                photo_linkedin_consent: Boolean(currentRegistrationDraft.photoLinkedinConsent),
+                score,
+                savings: totalSavings,
+                minus_points: totalMinusPoints,
+                created_at: currentRegistrationDraft.timestamp
+            };
+
+            insertRemoteRegistration(remoteRegistration).catch(error => {
+                console.warn('Supabase registration insert failed.', error);
+            });
+        }
+
         const leaderboardScores = getVisibleLeaderboardScores();
         let isHighScore = false;
         if (leaderboardScores.length < 10 || score > leaderboardScores[Math.min(leaderboardScores.length, 10) - 1].score) { isHighScore = true; }
@@ -1318,6 +1423,22 @@
         showResultPopup(score, placement, totalSavings, totalMinusPoints, beatenPlayers, isHighScore);
         document.getElementById('super-status').innerText = '';
         endedByLives = false;
+
+        insertRemoteScore({
+            entry_id: currentEntry.entryId,
+            first_name: currentEntry.firstName,
+            last_name: currentEntry.lastName,
+            alias: currentEntry.alias,
+            score: currentEntry.score,
+            savings: totalSavings,
+            minus_points: totalMinusPoints
+        }).then(() => {
+            loadRemoteHighScores();
+        }).catch(error => {
+            console.warn('Supabase leaderboard insert failed.', error);
+        });
+
+        currentRegistrationDraft = null;
     }
 
     function activateSuperMode() {
@@ -1697,6 +1818,7 @@
     })();
 
     updateHighScoreUI();
+    loadRemoteHighScores();
     updateDemoModeUI();
     const resultPopupEl = document.getElementById('result-popup');
     const gameWrapperEl = document.getElementById('game-wrapper');
