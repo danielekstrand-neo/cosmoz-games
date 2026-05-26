@@ -392,6 +392,53 @@
         #admin-overlay .admin-actions button { font-family: monospace; font-size: 12px; padding: 8px 16px; }
         .close-admin { position: fixed; top: 20px; right: 30px; color: #ff5959; font-size: 24px; cursor: pointer; z-index: 1001; }
 
+        /* ── Touch controls ── */
+        #touch-controls {
+            display: none;
+            position: absolute;
+            bottom: 130px;
+            left: 24px;
+            right: 24px;
+            justify-content: space-between;
+            align-items: flex-end;
+            z-index: 15;
+            pointer-events: none;
+        }
+        .touch-btn {
+            width: 76px;
+            height: 76px;
+            border-radius: 50%;
+            font-size: 26px;
+            background: rgba(165,165,255,0.18);
+            border: 3px solid rgba(165,165,255,0.55);
+            color: #a5a5ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            pointer-events: auto;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            font-family: 'Press Start 2P', cursive;
+            box-shadow: 0 0 14px rgba(165,165,255,0.25);
+            transition: background 0.08s;
+        }
+        .touch-btn-fire {
+            background: rgba(89,255,89,0.18);
+            border-color: rgba(89,255,89,0.55);
+            color: #59ff59;
+            box-shadow: 0 0 14px rgba(89,255,89,0.25);
+            font-size: 9px;
+            letter-spacing: 0;
+        }
+        .touch-btn.pressed { background: rgba(165,165,255,0.45); transform: scale(0.93); }
+        .touch-btn-fire.pressed { background: rgba(89,255,89,0.45); transform: scale(0.93); }
+
+        @media (pointer: coarse) {
+            #touch-controls { display: flex; }
+        }
+
         @media (max-width: 1120px) {
             .layout-grid {
                 flex-direction: column;
@@ -407,6 +454,64 @@
                 width: 100%;
                 height: min(78vh, 700px);
             }
+        }
+
+        /* ── Mobile (phones) ── */
+        @media (max-width: 600px) {
+            body { padding: 6px; }
+
+            #main-header h1 { font-size: 16px; letter-spacing: 2px; }
+            #main-header h2 { font-size: 8px; }
+
+            #highscore-panel { height: 140px; }
+
+            #game-wrapper {
+                height: 72vh;
+                padding: 10px;
+                border-radius: 12px;
+            }
+
+            canvas {
+                height: calc(100% - 100px);
+            }
+
+            .crt-overlay {
+                top: 10px; left: 10px; right: 10px; bottom: 100px;
+            }
+
+            #touch-controls {
+                bottom: 100px;
+                left: 10px;
+                right: 10px;
+            }
+
+            .touch-btn { width: 70px; height: 70px; font-size: 22px; }
+            .touch-btn-fire { font-size: 8px; }
+
+            #start-screen {
+                overflow-y: auto;
+                justify-content: flex-start;
+                padding-top: 14px;
+                border-radius: 12px;
+            }
+
+            #start-screen .form-row {
+                flex-direction: column;
+                gap: 0;
+                width: 100%;
+            }
+
+            #start-screen .form-row input { width: 100%; box-sizing: border-box; margin: 4px 0; }
+
+            input[type="email"], input.wide-input {
+                width: 100% !important;
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+
+            #dashboard { font-size: 8px; padding: 6px; }
+
+            #ui-layer button { font-size: 8px; padding: 8px 10px; }
         }
     </style>
 </head>
@@ -437,6 +542,12 @@
         <canvas id="gameCanvas" width="720" height="450"></canvas>
         <div class="crt-overlay"></div>
 
+        <div id="touch-controls">
+            <button class="touch-btn" id="tc-left" aria-label="Move left">&#9664;</button>
+            <button class="touch-btn touch-btn-fire" id="tc-fire" aria-label="Shoot">FIRE</button>
+            <button class="touch-btn" id="tc-right" aria-label="Move right">&#9654;</button>
+        </div>
+
         <div id="start-screen">
             <h1 style="color:#a5a5ff; text-shadow: 4px 4px 0 #40318d; font-size:20px; margin-bottom: 5px;">COSMOZ DEFENDER</h1>
             <p style="font-size:10px; margin-top:10px;">MISSION: PROCESS INVOICES (60 SEC)</p>
@@ -444,7 +555,7 @@
             <p style="font-size:9px; color:#59ff59; max-width:520px; line-height:1.7;">Shoot random falling COSMOZ icons to trigger COSMOZ MODE for 3 seconds.</p>
             <div style="font-size:8px; color:#bfc7ff; text-align:left; max-width:520px; line-height:1.8; margin:6px 0 8px 0; background:#13132a; border:1px solid #2f2f66; border-radius:8px; padding:8px 10px;">
                 <strong style="color:#59ff59;">HOW TO PLAY (EN)</strong><br>
-                Move with LEFT/RIGHT and shoot with SPACEBAR.<br>
+                Move with LEFT/RIGHT or tap the on-screen buttons. Shoot with SPACEBAR or the FIRE button.<br>
                 You have 3 lives.<br>
                 Avoid fraudulent invoices: if they hit you or you shoot them, you lose points and lives.<br>
                 Shoot COSMOZ logos to activate COSMOZ MODE.
@@ -625,6 +736,23 @@
     window.addEventListener('keydown', e => keys[e.code] = true);
     window.addEventListener('keyup', e => keys[e.code] = false);
     window.addEventListener('keydown', e => { if (e.code === 'Space' && gameActive && !cosmozActive) shoot('#a5a5ff'); });
+
+    // Touch controls
+    (function setupTouchControls() {
+        const tcLeft = document.getElementById('tc-left');
+        const tcRight = document.getElementById('tc-right');
+        const tcFire = document.getElementById('tc-fire');
+        function hold(key, active) { keys[key] = active; }
+        tcLeft.addEventListener('touchstart',  e => { e.preventDefault(); hold('ArrowLeft', true);  tcLeft.classList.add('pressed'); },    { passive: false });
+        tcLeft.addEventListener('touchend',    e => { e.preventDefault(); hold('ArrowLeft', false); tcLeft.classList.remove('pressed'); }, { passive: false });
+        tcLeft.addEventListener('touchcancel', ()  => { hold('ArrowLeft', false); tcLeft.classList.remove('pressed'); });
+        tcRight.addEventListener('touchstart',  e => { e.preventDefault(); hold('ArrowRight', true);  tcRight.classList.add('pressed'); },    { passive: false });
+        tcRight.addEventListener('touchend',    e => { e.preventDefault(); hold('ArrowRight', false); tcRight.classList.remove('pressed'); }, { passive: false });
+        tcRight.addEventListener('touchcancel', ()  => { hold('ArrowRight', false); tcRight.classList.remove('pressed'); });
+        tcFire.addEventListener('touchstart',  e => { e.preventDefault(); if (gameActive && !cosmozActive) shoot('#a5a5ff'); tcFire.classList.add('pressed'); },    { passive: false });
+        tcFire.addEventListener('touchend',    e => { e.preventDefault(); tcFire.classList.remove('pressed'); }, { passive: false });
+        tcFire.addEventListener('touchcancel', ()  => { tcFire.classList.remove('pressed'); });
+    })();
 
     window.addEventListener('keydown', e => {
         const adminModifier = e.ctrlKey || e.metaKey;
