@@ -506,7 +506,8 @@
         .touch-btn-fire.pressed { background: rgba(89,255,89,0.45); transform: scale(0.93); }
 
         @media (pointer: coarse) {
-            body.game-running #touch-controls { display: none; }
+            body.game-running #touch-controls { display: flex; justify-content: center; }
+            body.game-running #touch-controls .touch-btn:not(.touch-btn-fire) { display: none; }
         }
 
         @media (max-width: 1120px) {
@@ -642,7 +643,7 @@
             <p style="font-size:9px; color:#59ff59; max-width:520px; line-height:1.7;">Shoot random falling COSMOZ icons to trigger COSMOZ MODE for 3 seconds.</p>
             <div style="font-size:8px; color:#bfc7ff; text-align:left; max-width:520px; line-height:1.8; margin:6px 0 8px 0; background:#13132a; border:1px solid #2f2f66; border-radius:8px; padding:8px 10px;">
                 <strong style="color:#59ff59;">HOW TO PLAY (EN)</strong><br>
-                Move with LEFT/RIGHT on desktop. On mobile, drag the ship with your thumb and tap the play area to shoot.<br>
+                Move with LEFT/RIGHT on desktop. On mobile, drag the ship with your thumb and use the SHOOT button to fire.<br>
                 You have 3 lives.<br>
                 Avoid fraudulent invoices: if they hit you or you shoot them, you lose points and lives.<br>
                 Shoot COSMOZ logos to activate COSMOZ MODE.
@@ -907,11 +908,6 @@
                 if (mobileDragTouchId === null && inDragZone) {
                     mobileDragTouchId = touch.identifier;
                     setPlayerFromClientX(touch.clientX);
-                    return;
-                }
-
-                if (gameActive && !cosmozActive) {
-                    shoot('#a5a5ff');
                 }
             });
         }, { passive: false });
