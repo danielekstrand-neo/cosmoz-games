@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COSMOZ BY NEOVICI</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        body {
+            background-color: #111;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            color: #a5a5ff;
+            font-family: 'Press Start 2P', cursive;
+            padding: 16px;
+            overflow-x: hidden;
+        }
+
+        #main-header {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        #main-header h1 {
+            font-size: clamp(30px, 4.5vw, 48px);
+            color: #59ff59;
+            margin: 0;
+            text-shadow: 5px 5px 0 #000, 0 0 15px rgba(89, 255, 89, 0.5);
+            letter-spacing: 5px;
+        }
+
+        #main-header h2 {
+            font-size: clamp(10px, 1.4vw, 14px);
+            color: #a5a5ff;
+            margin: 15px 0 0 0;
+            text-shadow: 3px 3px 0 #000;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .layout-grid {
+            display: flex;
+            gap: 16px;
+            align-items: stretch;
+            width: min(1800px, 100%);
+            max-width: 100%;
+            flex: 1;
+        }
+
+        #highscore-panel {
+            width: 260px;
+            min-width: 260px;
+            height: min(88vh, 960px);
+            background-color: #000;
+            border: 4px solid #40318d;
+            border-radius: 10px;
+            padding: 20px;
+            box-sizing: border-box;
+            box-shadow: 0 0 15px rgba(64, 49, 141, 0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #highscore-panel h3 { font-size: 14px; text-align: center; color: #59ff59; margin: 0 0 20px 0; text-shadow: 2px 2px 0 #000; }
+
+        #hs-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 10px;
+            line-height: 2.5;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .hs-row { display: flex; justify-content: space-between; border-bottom: 1px dashed #333; }
+
+        #game-wrapper {
+            position: relative;
+            flex: 1;
+            height: min(88vh, 960px);
+            background-color: #40318d;
+            padding: 24px;
+            box-sizing: border-box;
+            border-radius: 20px;
+            box-shadow: 0 0 20px rgba(64, 49, 141, 0.8);
+            display: flex;
+            flex-direction: column;
+        }
+
+        canvas {
+            background-color: #352879;
+            display: block;
+            width: 100%;
+            height: calc(100% - 132px);
+            image-rendering: pixelated;
+            border-radius: 8px;
+        }
+
+        #start-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 20;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: #fff; padding: 20px; box-sizing: border-box;
+            border-radius: 20px;
+            text-align: center;
+        }
+
+        #start-screen .form-row {
+            display: flex; gap: 10px; margin-bottom: 5px;
+        }
+
+        input {
+            background: #000; border: 2px solid #59ff59; color: #59ff59;
+            font-family: 'Press Start 2P'; padding: 8px; margin: 5px;
+            text-align: center; font-size: 8px;
+        }
+
+        input[type="email"], input.wide-input {
+            width: 280px;
+        }
+
+        .consent-text {
+            font-family: monospace; font-size: 9px; color: #999;
+            max-width: 500px; text-align: center; margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .consent-text label {
+            cursor: pointer; display: flex; align-items: flex-start; gap: 8px; text-align: left;
+        }
+
+        .consent-text input[type="checkbox"] {
+            width: 16px; height: 16px; margin: 0; flex-shrink: 0;
+        }
+
+        .crt-overlay {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            right: 24px;
+            bottom: 108px;
+            background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.25) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 5;
+            border-radius: 8px;
+        }
+
+        #ui-layer { margin-top: 12px; text-align: center; z-index: 10; }
+
+        button {
+            background: #a5a5ff; color: #40318d; border: 3px solid #fff;
+            font-family: 'Press Start 2P', cursive; padding: 10px 15px;
+            cursor: pointer; box-shadow: 4px 4px 0px #000;
+            text-transform: uppercase; font-size: 10px; margin: 5px;
+        }
+        button:hover { background: #fff; }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        #dashboard {
+            display: flex; justify-content: space-between; background: #000;
+            padding: 10px; border: 2px solid #a5a5ff; margin-bottom: 10px;
+            font-size: 10px; color: #fff;
+            border-radius: 8px;
+        }
+
+        .time-text { color: #ff5959; }
+        .money-text { color: #59ff59; }
+
+        #powerup-hint {
+            font-size: 9px;
+            color: #59ff59;
+            margin-bottom: 6px;
+        }
+
+        #super-status {
+            font-size: 9px;
+            color: #59ff59;
+            min-height: 12px;
+        }
+
+        #admin-overlay {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 1000;
+            overflow-y: auto; padding: 40px; box-sizing: border-box;
+        }
+        #admin-overlay h2 { color: #59ff59; font-size: 16px; margin-bottom: 20px; }
+        #admin-overlay table { width: 100%; border-collapse: collapse; font-family: monospace; font-size: 12px; }
+        #admin-overlay th { color: #59ff59; text-align: left; padding: 8px; border-bottom: 2px solid #59ff59; }
+        #admin-overlay td { color: #ccc; padding: 8px; border-bottom: 1px solid #333; }
+        #admin-overlay .admin-actions { margin-bottom: 20px; }
+        #admin-overlay .admin-actions button { font-family: monospace; font-size: 12px; padding: 8px 16px; }
+        .close-admin { position: fixed; top: 20px; right: 30px; color: #ff5959; font-size: 24px; cursor: pointer; z-index: 1001; }
+
+        @media (max-width: 1120px) {
+            .layout-grid {
+                flex-direction: column;
+            }
+
+            #highscore-panel {
+                width: 100%;
+                min-width: 0;
+                height: 220px;
+            }
+
+            #game-wrapper {
+                width: 100%;
+                height: min(78vh, 700px);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="main-header">
+    <h1>COSMOZ</h1>
+    <h2>A PRODUCT BY NEOVICI</h2>
+</div>
+
+<div class="layout-grid">
+    <div id="highscore-panel">
+        <h3>LEADERBOARD</h3>
+        <ul id="hs-list"><li style="text-align:center;">LOADING...</li></ul>
+        <div style="margin-top:auto; font-size:8px; color:#666; text-align: center;">NEOVICI SYSTEMS<br>LOCAL STORAGE</div>
+    </div>
+
+    <div id="game-wrapper">
+        <canvas id="gameCanvas" width="720" height="450"></canvas>
+        <div class="crt-overlay"></div>
+
+        <div id="start-screen">
+            <h1 style="color:#a5a5ff; text-shadow: 4px 4px 0 #40318d; font-size:20px; margin-bottom: 5px;">COSMOZ DEFENDER</h1>
+            <p style="font-size:10px; margin-top:10px;">MISSION: PROCESS INVOICES (30 SEC)</p>
+            <p style="font-size:9px; color:#59ff59; max-width:520px; line-height:1.7;">Shoot random falling COSMOZ icons to trigger SUPER MODE for 3 seconds.</p>
+            <div class="form-row">
+                <input type="text" id="firstNameInput" placeholder="FIRST NAME" maxlength="20">
+                <input type="text" id="lastNameInput" placeholder="LAST NAME" maxlength="20">
+            </div>
+            <input type="text" class="wide-input" id="companyInput" placeholder="COMPANY NAME" maxlength="40">
+            <input type="email" id="emailInput" placeholder="EMAIL ADDRESS">
+            <div class="consent-text">
+                <label>
+                    <input type="checkbox" id="consentCheck">
+                    <span>I agree to be contacted by Neovici regarding Accounts Payable solutions and Cosmoz. Your information will be stored for a maximum of 30 days.</span>
+                </label>
+            </div>
+            <button id="startBtn" onclick="initGame()" style="font-size:14px; padding:15px;">START MISSION</button>
+        </div>
+
+        <div id="ui-layer">
+            <div id="dashboard">
+                <div style="text-align:left;">
+                    AGENT: <span id="p-alias" style="color:#a5a5ff">---</span><br><br>
+                    TIME LEFT: <span id="timer" class="time-text">00:30</span>
+                </div>
+                <div style="text-align:right;">
+                    PROCESSED: <span id="score">0</span><br><br>
+                    SAVED: <span id="savings" class="money-text">0 SEK</span>
+                </div>
+            </div>
+            <div id="powerup-hint">POWERUP: SHOOT FALLING COSMOZ ICONS</div>
+            <button onclick="setManual()">MANUAL PROCESSING</button>
+            <div id="super-status"></div>
+            <div style="margin-top: 10px;">
+                <a href="mailto:info@neovici.com" style="color:#59ff59; font-size:10px; text-decoration:none; border-bottom:1px dashed;">[ CONTACT SALES ]</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="admin-overlay">
+    <span class="close-admin" onclick="closeAdmin()">✕ CLOSE</span>
+    <h2>ADMIN — REGISTERED LEADS</h2>
+    <div class="admin-actions">
+        <button onclick="exportCSV()">EXPORT CSV</button>
+        <button onclick="clearRegistrations()" style="background:#ff5959;color:#fff;">CLEAR ALL DATA</button>
+    </div>
+    <table>
+        <thead><tr><th>#</th><th>NAME</th><th>COMPANY</th><th>EMAIL</th><th>SCORE</th><th>DATE</th></tr></thead>
+        <tbody id="admin-table-body"></tbody>
+    </table>
+</div>
+
+<script>
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+
+    function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
+
+    function playTone(type, fS, fE, dur, vol=0.1) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(fS, audioCtx.currentTime);
+        if (fE) osc.frequency.exponentialRampToValueAtTime(fE, audioCtx.currentTime + dur);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+        osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + dur);
+    }
+
+    function sfxShoot() { playTone('square', 800, 300, 0.1, 0.05); }
+    function sfxExplosion() { playTone('sawtooth', 100, 10, 0.2, 0.08); }
+    function sfxCosmoz() {
+        playTone('sine', 220, 880, 0.32, 0.08);
+        setTimeout(() => playTone('square', 660, 990, 0.18, 0.06), 130);
+    }
+    function sfxGameOver() {
+        playTone('triangle', 300, 100, 0.5);
+        setTimeout(() => playTone('triangle', 200, 50, 0.5), 400);
+    }
+
+    function sfxHighScore() {
+        if (!audioCtx) return;
+        playTone('square', 523.25, 523.25, 0.1, 0.1);
+        setTimeout(() => playTone('square', 659.25, 659.25, 0.1, 0.1), 150);
+        setTimeout(() => playTone('square', 783.99, 783.99, 0.1, 0.1), 300);
+        setTimeout(() => playTone('square', 1046.50, 1046.50, 0.4, 0.1), 450);
+    }
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let gameActive = false, cosmozActive = false, score = 0, frames = 0, playerAlias = 'GUEST';
+    const GAME_DURATION = 30; let timeRemaining = GAME_DURATION; let timerInterval;
+    const SUPER_MODE_DURATION_FRAMES = 180;
+    let superModeFrames = 0;
+    const player = { x: 340, y: 380, width: 40, height: 40, speed: 6 };
+    let bullets = [], enemies = [], particles = [], cosmozDrops = [];
+    let highScores = JSON.parse(localStorage.getItem('neovici_scores')) || [];
+    const keys = {};
+
+    let currentPlayerEmail = '';
+
+    window.addEventListener('keydown', e => keys[e.code] = true);
+    window.addEventListener('keyup', e => keys[e.code] = false);
+    window.addEventListener('keydown', e => { if (e.code === 'Space' && gameActive && !cosmozActive) shoot('#a5a5ff'); });
+
+    window.addEventListener('keydown', e => {
+        if (e.ctrlKey && e.shiftKey && e.code === 'KeyA') {
+            e.preventDefault();
+            openAdmin();
+        }
+    });
+
+    function openAdmin() {
+        const registrations = JSON.parse(localStorage.getItem('neovici_registrations')) || [];
+        const tbody = document.getElementById('admin-table-body');
+        tbody.innerHTML = '';
+        registrations.forEach((r, i) => {
+            const date = new Date(r.timestamp).toLocaleDateString();
+            tbody.innerHTML += `<tr><td>${i + 1}</td><td>${r.firstName} ${r.lastName}</td><td>${r.company || '-'}</td><td>${r.email}</td><td>${r.score !== undefined ? r.score : '-'}</td><td>${date}</td></tr>`;
+        });
+        document.getElementById('admin-overlay').style.display = 'block';
+    }
+
+    function closeAdmin() {
+        document.getElementById('admin-overlay').style.display = 'none';
+    }
+
+    function exportCSV() {
+        const registrations = JSON.parse(localStorage.getItem('neovici_registrations')) || [];
+        let csv = 'First Name,Last Name,Company,Email,Score,Date\n';
+        registrations.forEach(r => {
+            csv += `"${r.firstName}","${r.lastName}","${r.company || ''}","${r.email}","${r.score !== undefined ? r.score : ''}","${new Date(r.timestamp).toLocaleDateString()}"\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'cosmoz_leads.csv'; a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function clearRegistrations() {
+        if (confirm('Are you sure you want to delete ALL registration data?')) {
+            localStorage.removeItem('neovici_registrations');
+            openAdmin();
+        }
+    }
+
+    function updateHighScoreUI() {
+        const list = document.getElementById('hs-list'); list.innerHTML = '';
+        highScores.sort((a, b) => b.score - a.score);
+        highScores.slice(0, 10).forEach((entry, i) => {
+            list.innerHTML += `<li class="hs-row"><span>#${i + 1} ${entry.alias}</span><span>${entry.score}</span></li>`;
+        });
+        if (highScores.length === 0) list.innerHTML = '<li style="text-align:center;">NO RESULTS</li>';
+    }
+
+    function enterFullscreen() {
+        const el = document.getElementById('game-wrapper');
+        if (!document.fullscreenElement && el.requestFullscreen) {
+            el.requestFullscreen().catch(() => {});
+        }
+    }
+
+    function initGame() {
+        const firstName = document.getElementById('firstNameInput').value.trim();
+        const lastName = document.getElementById('lastNameInput').value.trim();
+        const company = document.getElementById('companyInput').value.trim();
+        const email = document.getElementById('emailInput').value.trim();
+        const consent = document.getElementById('consentCheck').checked;
+
+        if (firstName === '' || lastName === '') { alert('PLEASE ENTER YOUR FIRST AND LAST NAME!'); return; }
+        if (company === '') { alert('PLEASE ENTER YOUR COMPANY NAME!'); return; }
+        if (email === '' || !email.includes('@')) { alert('PLEASE ENTER A VALID EMAIL ADDRESS!'); return; }
+        if (!consent) { alert('PLEASE ACCEPT THE CONSENT TO PROCEED!'); return; }
+
+        playerAlias = (firstName.charAt(0) + '. ' + lastName).toUpperCase().substring(0, 12);
+        currentPlayerEmail = email;
+        document.getElementById('p-alias').innerText = playerAlias;
+        document.getElementById('start-screen').style.display = 'none';
+
+        const registrations = JSON.parse(localStorage.getItem('neovici_registrations')) || [];
+        registrations.push({ firstName, lastName, company, email, consent: true, score: 0, timestamp: new Date().toISOString() });
+        localStorage.setItem('neovici_registrations', JSON.stringify(registrations));
+
+        initAudio(); score = 0; frames = 0; timeRemaining = GAME_DURATION;
+        superModeFrames = 0;
+        bullets = []; enemies = []; particles = []; cosmozDrops = [];
+        gameActive = true; cosmozActive = false;
+
+        enterFullscreen();
+
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            if (!gameActive) return;
+            timeRemaining--;
+            const m = Math.floor(timeRemaining / 60), s = timeRemaining % 60;
+            document.getElementById('timer').innerText = `0${m}:${s < 10 ? '0' + s : s}`;
+            if (timeRemaining <= 0) endGame();
+        }, 1000);
+        requestAnimationFrame(loop); playTone('sine', 440, 880, 0.3);
+    }
+
+    function endGame() {
+        gameActive = false; clearInterval(timerInterval);
+
+        const registrations = JSON.parse(localStorage.getItem('neovici_registrations')) || [];
+        for (let i = registrations.length - 1; i >= 0; i--) {
+            if (registrations[i].email === currentPlayerEmail) {
+                registrations[i].score = score;
+                break;
+            }
+        }
+        localStorage.setItem('neovici_registrations', JSON.stringify(registrations));
+
+        let isHighScore = false;
+        if (highScores.length < 10 || score > highScores[highScores.length - 1].score) { isHighScore = true; }
+        if (isHighScore) sfxHighScore(); else sfxGameOver();
+        highScores.push({ alias: playerAlias, score: score });
+        localStorage.setItem('neovici_scores', JSON.stringify(highScores));
+        updateHighScoreUI();
+        const msg = isHighScore ? 'NEW HIGH SCORE!\n' : '';
+        alert(`${msg}TIME IS UP!\nRESULT: ${score} INVOICES PROCESSED`);
+        document.getElementById('start-screen').style.display = 'flex';
+        document.getElementById('super-status').innerText = '';
+    }
+
+    function activateSuperMode() {
+        if (!gameActive) return;
+        superModeFrames = SUPER_MODE_DURATION_FRAMES;
+        if (!cosmozActive) sfxCosmoz();
+        cosmozActive = true;
+    }
+
+    function setManual() {
+        if (!gameActive) return;
+        cosmozActive = false;
+        superModeFrames = 0;
+        document.getElementById('super-status').innerText = '';
+    }
+
+    function shoot(color) {
+        bullets.push({ x: player.x + 18, y: player.y, width: 4, height: 15, color: color });
+        sfxShoot();
+    }
+
+    function loop() { if (!gameActive) return; update(); draw(); requestAnimationFrame(loop); }
+
+    function getDifficulty() {
+        const elapsed = GAME_DURATION - timeRemaining;
+        const progress = elapsed / GAME_DURATION;
+        return {
+            spawnRate: Math.max(8, Math.floor(40 - progress * 32)),
+            enemySpeed: 2 + progress * 5,
+            maxEnemies: Math.floor(5 + progress * 15)
+        };
+    }
+
+    function hitTestRect(a, b) {
+        return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+    }
+
+    function spawnCosmozDrop() {
+        cosmozDrops.push({
+            x: Math.random() * (canvas.width - 28),
+            y: -34,
+            width: 28,
+            height: 28,
+            speed: 1.8 + Math.random() * 2.2,
+            sway: (Math.random() - 0.5) * 1.4,
+            phase: Math.random() * Math.PI * 2
+        });
+    }
+
+    function autoClearEnemies() {
+        if (enemies.length === 0) return;
+        const hits = enemies.length;
+        enemies.forEach(e => {
+            for (let k = 0; k < 6; k++) {
+                particles.push({
+                    x: e.x + e.width / 2,
+                    y: e.y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    life: 15,
+                    color: '#59ff59'
+                });
+            }
+        });
+        enemies = [];
+        score += hits;
+        sfxExplosion();
+    }
+
+    function update() {
+        const diff = getDifficulty();
+
+        if (!cosmozActive) {
+            if (keys['ArrowLeft'] && player.x > 0) player.x -= player.speed;
+            if (keys['ArrowRight'] && player.x < canvas.width - player.width) player.x += player.speed;
+        } else {
+            if (enemies.length > 0) {
+                const target = enemies.reduce((prev, curr) => (prev.y > curr.y) ? prev : curr);
+                const tx = target.x + target.width / 2;
+                const px = player.x + player.width / 2;
+                if (px < tx - 10) player.x += 26;
+                else if (px > tx + 10) player.x -= 26;
+                else player.x = tx - player.width / 2;
+            } else {
+                if (player.x < 340) player.x += 8;
+                if (player.x > 340) player.x -= 8;
+            }
+
+            if (frames % 2 === 0) autoClearEnemies();
+            superModeFrames--;
+            const secsLeft = Math.max(0, (superModeFrames / 60)).toFixed(1);
+            document.getElementById('super-status').innerText = `SUPER MODE ACTIVE ${secsLeft}s`;
+            if (superModeFrames <= 0) {
+                cosmozActive = false;
+                document.getElementById('super-status').innerText = '';
+            }
+        }
+
+        bullets.forEach((b, i) => { b.y -= 15; if (b.y < 0) bullets.splice(i, 1); });
+
+        enemies.forEach((e, i) => {
+            e.y += e.speed;
+            if (e.y > canvas.height) enemies.splice(i, 1);
+            bullets.forEach((b, bi) => {
+                if (b.x > e.x && b.x < e.x + e.width && b.y > e.y && b.y < e.y + e.height) {
+                    enemies.splice(i, 1); bullets.splice(bi, 1); score++; sfxExplosion();
+                    for (let k = 0; k < 6; k++) particles.push({
+                        x: e.x + e.width / 2,
+                        y: e.y,
+                        vx: (Math.random() - 0.5) * 10,
+                        vy: (Math.random() - 0.5) * 10,
+                        life: 15,
+                        color: cosmozActive ? '#59ff59' : '#fff'
+                    });
+                }
+            });
+        });
+
+        cosmozDrops.forEach((drop, i) => {
+            drop.phase += 0.08;
+            drop.x += Math.sin(drop.phase) * 0.7 + drop.sway;
+            drop.y += drop.speed;
+            if (drop.y > canvas.height + 40) cosmozDrops.splice(i, 1);
+
+            bullets.forEach((b, bi) => {
+                const bulletRect = { x: b.x, y: b.y, width: b.width, height: b.height };
+                if (hitTestRect(bulletRect, drop)) {
+                    bullets.splice(bi, 1);
+                    cosmozDrops.splice(i, 1);
+                    activateSuperMode();
+                    for (let k = 0; k < 8; k++) particles.push({
+                        x: drop.x + drop.width / 2,
+                        y: drop.y + drop.height / 2,
+                        vx: (Math.random() - 0.5) * 8,
+                        vy: (Math.random() - 0.5) * 8,
+                        life: 18,
+                        color: '#59ff59'
+                    });
+                }
+            });
+        });
+
+        particles.forEach((p, i) => { p.x += p.vx; p.y += p.vy; p.life--; if (p.life <= 0) particles.splice(i, 1); });
+
+        const spawnRate = cosmozActive ? Math.max(4, diff.spawnRate - 10) : diff.spawnRate;
+        if (frames % spawnRate === 0 && enemies.length < diff.maxEnemies) {
+            enemies.push({ x: Math.random() * (canvas.width - 60), y: -30, width: 60, height: 25, speed: diff.enemySpeed + Math.random() * 2 });
+        }
+
+        if (frames % 90 === 0 && Math.random() < 0.6) {
+            spawnCosmozDrop();
+        }
+
+        document.getElementById('score').innerText = score;
+        document.getElementById('savings').innerText = cosmozActive ? (score * 250).toLocaleString() + ' SEK' : '0 SEK';
+        frames++;
+    }
+
+    function drawCosmozDrop(drop) {
+        const cx = drop.x + drop.width / 2;
+        const cy = drop.y + drop.height / 2;
+        ctx.fillStyle = '#0d3b35';
+        ctx.fillRect(drop.x, drop.y, drop.width, drop.height);
+        ctx.strokeStyle = '#59ff59';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(drop.x, drop.y, drop.width, drop.height);
+
+        ctx.fillStyle = '#59ff59';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#00302a';
+        ctx.font = "bold 10px 'Press Start 2P'";
+        ctx.textAlign = 'center';
+        ctx.fillText('C', cx, cy + 3);
+        ctx.textAlign = 'start';
+    }
+
+    function draw() {
+        ctx.fillStyle = '#352879'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = cosmozActive ? '#59ff59' : '#ff6666';
+        ctx.beginPath(); ctx.moveTo(player.x + 20, player.y); ctx.lineTo(player.x + 40, player.y + 40); ctx.lineTo(player.x, player.y + 40); ctx.fill();
+
+        enemies.forEach(e => {
+            ctx.fillStyle = '#fff'; ctx.fillRect(e.x, e.y, e.width, e.height);
+            ctx.fillStyle = '#000'; ctx.font = "10px 'Press Start 2P'"; ctx.fillText('INV', e.x + 10, e.y + 16);
+        });
+
+        bullets.forEach(b => { ctx.fillStyle = b.color; ctx.fillRect(b.x, b.y, b.width, b.height); });
+        particles.forEach(p => { ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 4, 4); });
+        cosmozDrops.forEach(drawCosmozDrop);
+
+        if (cosmozActive) {
+            ctx.fillStyle = 'rgba(89,255,89,0.15)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            if (frames % 40 < 25) {
+                ctx.fillStyle = '#59ff59';
+                ctx.font = "20px 'Press Start 2P'"; ctx.textAlign = 'center';
+                ctx.fillText('SUPER MODE ONLINE', canvas.width / 2, 100);
+                ctx.font = '10px monospace';
+                ctx.fillText('AUTO-HIT ACTIVE', canvas.width / 2, 120);
+                ctx.textAlign = 'start';
+            }
+        }
+    }
+
+    (function cleanupOldData() {
+        const registrations = JSON.parse(localStorage.getItem('neovici_registrations')) || [];
+        const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+        const filtered = registrations.filter(r => new Date(r.timestamp).getTime() > thirtyDaysAgo);
+        localStorage.setItem('neovici_registrations', JSON.stringify(filtered));
+    })();
+
+    updateHighScoreUI();
+    ctx.fillStyle = '#352879'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+</script>
+</body>
+</html>

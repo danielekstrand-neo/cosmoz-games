@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COSMOZ BY NEOVICI</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        body {
+            background-color: #111;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            color: #a5a5ff;
+            font-family: 'Press Start 2P', cursive;
+            padding: 16px;
+            overflow-x: hidden;
+        }
+
+        #main-header {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        #admin-hub {
+            position: fixed;
+            top: 12px;
+            right: -122px;
+            z-index: 1300;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 6px;
+            opacity: 0.35;
+            transition: right 0.2s ease, opacity 0.2s ease;
+        }
+
+        #admin-hub:hover,
+        #admin-hub:focus-within {
+            right: 10px;
+            opacity: 1;
+        }
+
+        #admin-open-btn {
+            font-size: 9px;
+            padding: 8px 10px;
+            background: #59ff59;
+            color: #00291f;
+            border: 2px solid #ffffff;
+            box-shadow: 3px 3px 0 #000;
+            margin: 0;
+        }
+
+        #admin-open-btn:hover {
+            background: #9dff9d;
+        }
+
+        #admin-shortcuts {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 6px;
+        }
+
+        #admin-shortcuts button {
+            margin: 0;
+            font-size: 8px;
+            padding: 8px 10px;
+            min-width: 130px;
+        }
+
+        #main-header h1 {
+            font-size: clamp(30px, 4.5vw, 48px);
+            color: #59ff59;
+            margin: 0;
+            text-shadow: 5px 5px 0 #000, 0 0 15px rgba(89, 255, 89, 0.5);
+            letter-spacing: 5px;
+        }
+
+        #main-header h2 {
+            font-size: clamp(10px, 1.4vw, 14px);
+            color: #a5a5ff;
+            margin: 15px 0 0 0;
+            text-shadow: 3px 3px 0 #000;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        #main-header .site-url {
+            margin: 12px 0 0 0;
+            font-size: clamp(11px, 1.4vw, 16px);
+            color: #59ff59;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        #created-by-badge {
+            position: absolute;
+            left: 10px;
+            bottom: 8px;
+            font-size: clamp(8px, 1.1vw, 10px);
+            color: #d7d7d7;
+            letter-spacing: 0.6px;
+            text-shadow: 1px 1px 0 #000;
+            background: rgba(0, 0, 0, 0.62);
+            border: 1px solid rgba(255, 255, 255, 0.26);
+            border-radius: 6px;
+            padding: 4px 8px;
+            line-height: 1.35;
+            max-width: calc(100% - 20px);
+            white-space: normal;
+            overflow-wrap: anywhere;
+            z-index: 40;
+            pointer-events: none;
+        }
+
+        #main-header .site-url a {
+            color: #59ff59;
+            text-decoration: none;
+            border-bottom: 1px dashed #59ff59;
+        }
+
+        .prize-teaser {
+            font-size: 10px;
+            color: #ffd166;
+            margin-top: 6px;
+            letter-spacing: 0.6px;
+            animation: prizeBlink 1.15s steps(2, start) infinite;
+        }
+
+        @keyframes prizeBlink {
+            0% { opacity: 1; }
+            45% { opacity: 1; }
+            50% { opacity: 0.2; }
+            100% { opacity: 1; }
+        }
+
+        .layout-grid {
+            display: flex;
+            gap: 16px;
+            align-items: stretch;
+            width: min(1800px, 100%);
+            max-width: 100%;
+            flex: 1;
+        }
+
+        #highscore-panel {
+            width: 260px;
+            min-width: 260px;
+            height: min(88vh, 960px);
+            background-color: #000;
+            border: 4px solid #40318d;
+            border-radius: 10px;
+            padding: 20px;
+            box-sizing: border-box;
+            box-shadow: 0 0 15px rgba(64, 49, 141, 0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #highscore-panel h3 { font-size: 14px; text-align: center; color: #59ff59; margin: 0 0 20px 0; text-shadow: 2px 2px 0 #000; }
+
+        #hs-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 10px;
+            line-height: 2.5;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .hs-row { display: flex; justify-content: space-between; border-bottom: 1px dashed #333; }
+        .hs-row.latest-entry {
+            background: rgba(89, 255, 89, 0.14);
+            color: #d7ffd7;
+            border-bottom: 1px solid rgba(89, 255, 89, 0.6);
+            box-shadow: inset 0 0 10px rgba(89, 255, 89, 0.2);
+        }
+
+        #game-wrapper {
+            position: relative;
+            flex: 1;
+            height: min(88vh, 960px);
+            background-color: #40318d;
+            padding: 24px;
+            box-sizing: border-box;
+            border-radius: 20px;
+            box-shadow: 0 0 20px rgba(64, 49, 141, 0.8);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #game-wrapper:fullscreen {
+            width: 100vw;
+            height: 100vh;
+            max-width: 100vw;
+            border-radius: 0;
+            padding: 20px;
+        }
+
+        #game-wrapper:-webkit-full-screen {
+            width: 100vw;
+            height: 100vh;
+            max-width: 100vw;
+            border-radius: 0;
+            padding: 20px;
+        }
+
+        canvas {
+            background-color: #352879;
+            display: block;
+            width: 100%;
+            height: calc(100% - 132px);
+            image-rendering: pixelated;
+            border-radius: 8px;
+        }
+
+        #start-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 20;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: #fff; padding: 20px; box-sizing: border-box;
+            border-radius: 20px;
+            text-align: center;
+        }
+
+        #start-screen .form-row {
+            display: flex; gap: 10px; margin-bottom: 5px;
+        }
+
+        input {
+            background: #000; border: 2px solid #59ff59; color: #59ff59;
+            font-family: 'Press Start 2P'; padding: 8px; margin: 5px;
+            text-align: center; font-size: 8px;
+        }
+
+        input[type="email"], input.wide-input {
+            width: 280px;
+        }
+
+        .consent-text {
+            font-family: monospace; font-size: 9px; color: #999;
+            max-width: 500px; text-align: center; margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .consent-text label {
+            cursor: pointer; display: flex; align-items: flex-start; gap: 8px; text-align: left;
+        }
+
+        .consent-text input[type="checkbox"] {
+            width: 16px; height: 16px; margin: 0; flex-shrink: 0;
+        }
+
+        .crt-overlay {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            right: 24px;
+            bottom: 108px;
+            background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.25) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 5;
+            border-radius: 8px;
+        }
+
+        #game-wrapper:fullscreen .crt-overlay,
+        #game-wrapper:-webkit-full-screen .crt-overlay {
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            bottom: 104px;
+            border-radius: 6px;
+        }
+
+        #ui-layer { margin-top: 12px; text-align: center; z-index: 10; }
+
+        #hud-website {
+            margin-top: 8px;
+            font-size: 10px;
+            color: #59ff59;
+            letter-spacing: 1px;
+        }
+
+        #hud-website a {
+            color: #59ff59;
+            text-decoration: none;
+            border-bottom: 1px dashed #59ff59;
+        }
+
+        button {
+            background: #a5a5ff; color: #40318d; border: 3px solid #fff;
+            font-family: 'Press Start 2P', cursive; padding: 10px 15px;
+            cursor: pointer; box-shadow: 4px 4px 0px #000;
+            text-transform: uppercase; font-size: 10px; margin: 5px;
+        }
+        button:hover { background: #fff; }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        #dashboard {
+            display: flex; justify-content: space-between; background: #000;
+            padding: 10px; border: 2px solid #a5a5ff; margin-bottom: 10px;
+            font-size: 10px; color: #fff;
+            border-radius: 8px;
+        }
+
+        .time-text { color: #ff5959; }
+        .money-text { color: #59ff59; }
+
+        #powerup-hint {
+            font-size: 9px;
+            color: #59ff59;
+            margin-bottom: 6px;
+        }
+
+        #super-status {
+            font-size: 9px;
+            color: #59ff59;
+            min-height: 12px;
+        }
+
+        #admin-overlay {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 1000;
+            overflow-y: auto; padding: 40px; box-sizing: border-box;
+        }
+
+        #result-popup {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.78);
+            z-index: 1200;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+
+        .result-card {
+            width: min(600px, 100%);
+            background: #09090f;
+            border: 3px solid #59ff59;
+            border-radius: 12px;
+            box-shadow: 0 0 22px rgba(89, 255, 89, 0.35);
+            padding: 22px;
+            color: #d8d8ff;
+        }
+
+        .result-card h3 {
+            margin: 0 0 16px 0;
+            color: #59ff59;
+            font-size: 16px;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 10px;
+            margin-bottom: 14px;
+        }
+
+        .result-item {
+            background: #111;
+            border: 1px solid #2a2a55;
+            border-radius: 8px;
+            padding: 10px;
+            line-height: 1.6;
+        }
+
+        .result-item strong {
+            color: #59ff59;
+        }
+
+        .result-actions {
+            text-align: right;
+        }
+        #admin-overlay h2 { color: #59ff59; font-size: 16px; margin-bottom: 20px; }
+        #admin-overlay table { width: 100%; border-collapse: collapse; font-family: monospace; font-size: 12px; }
+        #admin-overlay th { color: #59ff59; text-align: left; padding: 8px; border-bottom: 2px solid #59ff59; }
+        #admin-overlay td { color: #ccc; padding: 8px; border-bottom: 1px solid #333; }
+        #admin-overlay .admin-actions { margin-bottom: 20px; }
+        #admin-overlay .admin-actions button { font-family: monospace; font-size: 12px; padding: 8px 16px; }
+        .close-admin { position: fixed; top: 20px; right: 30px; color: #ff5959; font-size: 24px; cursor: pointer; z-index: 1001; }
+
+        @media (max-width: 1120px) {
+            .layout-grid {
+                flex-direction: column;
+            }
+
+            #highscore-panel {
+                width: 100%;
+                min-width: 0;
+                height: 220px;
+            }
+
+            #game-wrapper {
+                width: 100%;
+                height: min(78vh, 700px);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="main-header">
+    <h1>COSMOZ DEFENDER</h1>
+    <h2>A PRODUCT BY NEOVICI</h2>
+    <p class="site-url"><a href="https://www.cosmoz.com" target="_blank" rel="noopener noreferrer">WWW.COSMOZ.COM</a></p>
+</div>
+
+<div id="admin-hub">
+    <button id="admin-open-btn" onclick="openAdmin()">ADMIN MENU</button>
+    <div id="admin-shortcuts">
+        <button onclick="adminQuickStart()" style="background:#59ff59; color:#00291f;">ADMIN START</button>
+        <button id="demo-toggle-admin" onclick="toggleDemoMode()" style="background:#2b2b44; color:#a5a5ff;">DEMO MODE: OFF</button>
+    </div>
+</div>
+
+<div class="layout-grid">
+    <div id="highscore-panel">
+        <h3>LEADERBOARD</h3>
+        <ul id="hs-list"><li style="text-align:center;">LOADING...</li></ul>
+        <div style="margin-top:auto; font-size:8px; color:#666; text-align: center;">NEOVICI SYSTEMS<br>LOCAL STORAGE</div>
+    </div>
+
+    <div id="game-wrapper">
+        <canvas id="gameCanvas" width="720" height="450"></canvas>
+        <div class="crt-overlay"></div>
+
+        <div id="start-screen">
+            <h1 style="color:#a5a5ff; text-shadow: 4px 4px 0 #40318d; font-size:20px; margin-bottom: 5px;">COSMOZ DEFENDER</h1>
+            <p style="font-size:10px; margin-top:10px;">MISSION: PROCESS INVOICES (60 SEC)</p>
+            <p class="prize-teaser">Compete, join the random raffle, and get a chance to win one of this summer's biggest surprises. The winner will be randomly drawn and announced on Thursday.</p>
+            <p style="font-size:9px; color:#59ff59; max-width:520px; line-height:1.7;">Shoot random falling COSMOZ icons to trigger COSMOZ MODE for 3 seconds.</p>
+            <div style="font-size:8px; color:#bfc7ff; text-align:left; max-width:520px; line-height:1.8; margin:6px 0 8px 0; background:#13132a; border:1px solid #2f2f66; border-radius:8px; padding:8px 10px;">
+                <strong style="color:#59ff59;">HOW TO PLAY (EN)</strong><br>
+                Move with LEFT/RIGHT and shoot with SPACEBAR.<br>
+                You have 3 lives.<br>
+                Avoid fraudulent invoices: if they hit you or you shoot them, you lose points and lives.<br>
+                Shoot COSMOZ logos to activate COSMOZ MODE.
+            </div>
+            <div class="form-row">
+                <input type="text" id="firstNameInput" placeholder="FIRST NAME" maxlength="20">
+                <input type="text" id="lastNameInput" placeholder="LAST NAME" maxlength="20">
+            </div>
+            <input type="text" class="wide-input" id="companyInput" placeholder="COMPANY NAME" maxlength="40">
+            <input type="email" id="emailInput" placeholder="EMAIL ADDRESS">
+            <div class="consent-text">
+                <label>
+                    <input type="checkbox" id="consentCheck">
+                    <span>I agree to be contacted by Neovici regarding Accounts Payable solutions and Cosmoz. Your information will be stored for a maximum of 30 days.</span>
+                </label>
+                <label style="margin-top:8px;">
+                    <input type="checkbox" id="winnerPhotoConsent">
+                    <span>I agree that, if I win, Neovici may post a photo of me and my name on LinkedIn.</span>
+                </label>
+            </div>
+            <div style="font-size:12px; color:#59ff59; margin-top:8px; letter-spacing:1px;"><a href="https://www.cosmoz.com" target="_blank" rel="noopener noreferrer" style="color:#59ff59; text-decoration:none; border-bottom:1px dashed #59ff59;">WWW.COSMOZ.COM</a></div>
+            <button id="startBtn" onclick="initGame()" style="font-size:14px; padding:15px;">START MISSION</button>
+            <div id="demo-note" style="font-size:8px; color:#7d89c7; margin-top:6px; min-height:10px;"></div>
+        </div>
+
+        <div id="ui-layer">
+            <div id="dashboard">
+                <div style="text-align:left;">
+                    AGENT: <span id="p-alias" style="color:#a5a5ff">---</span><br><br>
+                    TIME LEFT: <span id="timer" class="time-text">01:00</span><br><br>
+                    LIVES: <span id="lives" style="color:#ff8b8b">3</span>
+                </div>
+                <div style="text-align:right;">
+                    PROCESSED: <span id="score">0</span><br><br>
+                    SAVED: <span id="savings" class="money-text">0 SEK</span>
+                </div>
+            </div>
+            <div id="powerup-hint">POWERUP: SHOOT FALLING COSMOZ ICONS</div>
+            <button onclick="setManual()">MANUAL PROCESSING</button>
+            <div id="super-status"></div>
+            <div id="event-status" style="font-size:9px; color:#ff8b8b; min-height:12px;"></div>
+            <div id="hud-website">WWW.COSMOZ.COM</div>
+            <div style="margin-top: 10px;">
+                <a href="mailto:info@neovici.com" style="color:#59ff59; font-size:10px; text-decoration:none; border-bottom:1px dashed;">[ CONTACT SALES ]</a>
+            </div>
+        </div>
+        <div id="created-by-badge">Daniel.ekstrand@neovici.se</div>
+    </div>
+</div>
+
+<div id="admin-overlay">
+    <span class="close-admin" onclick="closeAdmin()">✕ CLOSE</span>
+    <h2>ADMIN — REGISTERED LEADS</h2>
+    <div class="admin-actions">
+        <button onclick="exportCSV()">EXPORT CSV</button>
+        <button onclick="clearRegistrations()" style="background:#ff5959;color:#fff;">CLEAR ALL DATA</button>
+    </div>
+    <table>
+        <thead><tr><th>#</th><th>NAME</th><th>COMPANY</th><th>EMAIL</th><th>SCORE</th><th>PHOTO/LINKEDIN</th><th>DATE</th></tr></thead>
+        <tbody id="admin-table-body"></tbody>
+    </table>
+</div>
+
+<div id="result-popup">
+    <div class="result-card">
+        <h3 id="result-title">MISSION COMPLETE</h3>
+        <div class="result-grid">
+            <div class="result-item">PROCESSED<br><strong id="result-score">0</strong></div>
+            <div class="result-item">PLACEMENT<br><strong id="result-placement">#-</strong></div>
+            <div class="result-item">TOTAL SAVED<br><strong id="result-savings">0 SEK</strong></div>
+            <div class="result-item">BEATEN PLAYERS<br><strong id="result-beaten">0</strong></div>
+            <div class="result-item">TOTAL MINUS<br><strong id="result-minus">0</strong></div>
+        </div>
+        <div class="result-actions">
+            <button id="result-close-btn" onclick="closeResultPopup()">TRY AGAIN</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+
+    function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
+
+    function playTone(type, fS, fE, dur, vol=0.1) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(fS, audioCtx.currentTime);
+        if (fE) osc.frequency.exponentialRampToValueAtTime(fE, audioCtx.currentTime + dur);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+        osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + dur);
+    }
+
+    function sfxShoot() { playTone('square', 800, 300, 0.1, 0.05); }
+    function sfxExplosion() { playTone('sawtooth', 100, 10, 0.2, 0.08); }
+    function sfxCosmoz() {
+        playTone('sine', 220, 880, 0.32, 0.08);
+        setTimeout(() => playTone('square', 660, 990, 0.18, 0.06), 130);
+    }
+    function sfxGameOver() {
+        playTone('triangle', 300, 100, 0.5);
+        setTimeout(() => playTone('triangle', 200, 50, 0.5), 400);
+    }
+
+    function sfxHighScore() {
+        if (!audioCtx) return;
+        playTone('square', 523.25, 523.25, 0.1, 0.1);
+        setTimeout(() => playTone('square', 659.25, 659.25, 0.1, 0.1), 150);
+        setTimeout(() => playTone('square', 783.99, 783.99, 0.1, 0.1), 300);
+        setTimeout(() => playTone('square', 1046.50, 1046.50, 0.4, 0.1), 450);
+    }
+
+    function sfxGameOverMelody() {
+        playTone('triangle', 330, 330, 0.16, 0.1);
+        setTimeout(() => playTone('triangle', 262, 262, 0.2, 0.11), 170);
+        setTimeout(() => playTone('triangle', 196, 196, 0.36, 0.12), 380);
+    }
+
+    function sfxFraudPenalty() {
+        playTone('sawtooth', 180, 70, 0.2, 0.1);
+        setTimeout(() => playTone('triangle', 120, 50, 0.2, 0.09), 120);
+    }
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let gameActive = false, cosmozActive = false, score = 0, frames = 0, playerAlias = 'GUEST';
+    let totalSavings = 0;
+    let totalMinusPoints = 0;
+    const GAME_DURATION = 60; let timeRemaining = GAME_DURATION; let timerInterval;
+    const SUPER_MODE_DURATION_FRAMES = 180;
+    let superModeFrames = 0;
+    const player = { x: 340, y: 380, width: 40, height: 40, speed: 6 };
+    let bullets = [], enemies = [], particles = [], cosmozDrops = [], bluffInvoices = [];
+    let highScores = JSON.parse(localStorage.getItem('neovici_scores')) || [];
+    const keys = {};
+    const cosmozLogo = new Image();
+    let cosmozLogoReady = false;
+    cosmozLogo.onload = () => { cosmozLogoReady = true; };
+    cosmozLogo.src = 'cosmoz-logo.svg';
+
+    let currentPlayerEmail = '';
+    let currentPlayerFirstName = '';
+    let currentPlayerLastName = '';
+    let currentRegistrationId = '';
+    let currentSessionIsAdmin = false;
+    let demoModeEnabled = false;
+    let demoRunning = false;
+    let lastUserActivityAt = Date.now();
+    const DEMO_IDLE_MS = 12000;
+    let endedByLives = false;
+    let latestEntryId = '';
+    let screenShakeFrames = 0;
+    let hitFlashFrames = 0;
+    let cosmozPulseFrames = 0;
+    let cosmozPulseColor = '89,255,89';
+    let lives = 3;
+    let eventMessageFrames = 0;
+    let eventMessageText = '';
+    let adminSecretBuffer = '';
+    let headerClickCount = 0;
+    let headerClickTimer = null;
+
+    function isRealPlayerScore(entry) {
+        if (!entry || typeof entry !== 'object') return false;
+        const first = String(entry.firstName || '').trim().toUpperCase();
+        const last = String(entry.lastName || '').trim().toUpperCase();
+        const alias = String(entry.alias || '').trim().toUpperCase();
+        const isAdmin = (first === 'ADMIN' && last === 'USER') || alias.includes('ADMIN');
+        const hasNames = first.length > 0 && last.length > 0;
+        return hasNames && !isAdmin;
+    }
+
+    function getVisibleLeaderboardScores() {
+        return highScores.filter(isRealPlayerScore).sort((a, b) => b.score - a.score);
+    }
+
+    window.addEventListener('keydown', e => keys[e.code] = true);
+    window.addEventListener('keyup', e => keys[e.code] = false);
+    window.addEventListener('keydown', e => { if (e.code === 'Space' && gameActive && !cosmozActive) shoot('#a5a5ff'); });
+
+    window.addEventListener('keydown', e => {
+        const adminModifier = e.ctrlKey || e.metaKey;
+        if (adminModifier && e.shiftKey && (e.code === 'KeyA' || e.code === 'KeyL')) {
+            e.preventDefault();
+            openAdmin();
+        }
+
+        // Backup trigger for browsers that consume Ctrl/Cmd shortcuts.
+        if (e.key && e.key.length === 1) {
+            adminSecretBuffer = (adminSecretBuffer + e.key.toLowerCase()).slice(-12);
+            if (adminSecretBuffer.endsWith('admin') || adminSecretBuffer.endsWith('dragning')) {
+                adminSecretBuffer = '';
+                openAdmin();
+            }
+        }
+    });
+
+    const headerEl = document.getElementById('main-header');
+    if (headerEl) {
+        headerEl.addEventListener('click', () => {
+            headerClickCount += 1;
+            if (headerClickTimer) clearTimeout(headerClickTimer);
+            headerClickTimer = setTimeout(() => {
+                headerClickCount = 0;
+            }, 900);
+            if (headerClickCount >= 3) {
+                headerClickCount = 0;
+                openAdmin();
+            }
+        });
+    }
+
+    function openAdmin() {
+        const registrations = JSON.parse(localStorage.getItem('neovici_registrations')) || [];
+        const tbody = document.getElementById('admin-table-body');
+        tbody.innerHTML = '';
+        registrations.forEach((r, i) => {
+            const date = new Date(r.timestamp).toLocaleDateString();
+            const photoConsentText = r.photoLinkedinConsent ? 'YES' : 'NO';
+            tbody.innerHTML += `<tr><td>${i + 1}</td><td>${r.firstName} ${r.lastName}</td><td>${r.company || '-'}</td><td>${r.email}</td><td>${r.score !== undefined ? r.score : '-'}</td><td>${photoConsentText}</td><td>${date}</td></tr>`;
+        });
+        document.getElementById('admin-overlay').style.display = 'block';
+    }
+
+    function closeAdmin() {
+        document.getElementById('admin-overlay').style.display = 'none';
+    }
+
+    function exportCSV() {
+        const registrations = JSON.parse(localStorage.getItem('neovici_registrations')) || [];
+        let csv = 'First Name,Last Name,Company,Email,Score,Photo+LinkedIn Consent,Date\n';
+        registrations.forEach(r => {
+            csv += `"${r.firstName}","${r.lastName}","${r.company || ''}","${r.email}","${r.score !== undefined ? r.score : ''}","${r.photoLinkedinConsent ? 'YES' : 'NO'}","${new Date(r.timestamp).toLocaleDateString()}"\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'cosmoz_leads.csv'; a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function clearRegistrations() {
+        if (confirm('Are you sure you want to delete ALL registration data?')) {
+            localStorage.removeItem('neovici_registrations');
+            openAdmin();
+        }
+    }
+
+    function updateHighScoreUI() {
+        const list = document.getElementById('hs-list'); list.innerHTML = '';
+        const visibleScores = getVisibleLeaderboardScores();
+        visibleScores.forEach((entry, i) => {
+            const fullName = (entry.firstName && entry.lastName)
+                ? `${entry.firstName} ${entry.lastName}`
+                : 'UNKNOWN PLAYER';
+            const latestClass = entry.entryId && entry.entryId === latestEntryId ? ' latest-entry' : '';
+            list.innerHTML += `<li class="hs-row${latestClass}"><span>#${i + 1} ${fullName}</span><span>${entry.score}</span></li>`;
+        });
+        if (visibleScores.length === 0) list.innerHTML = '<li style="text-align:center;">NO RESULTS</li>';
+    }
+
+    function showResultPopup(scoreValue, placement, savingsValue, minusValue, beatenPlayers, isHighScore) {
+        const title = endedByLives ? 'GAME OVER' : (isHighScore ? 'NEW HIGH SCORE' : 'MISSION COMPLETE');
+        document.getElementById('result-title').innerText = title;
+        document.getElementById('result-score').innerText = scoreValue;
+        document.getElementById('result-placement').innerText = `#${placement}`;
+        document.getElementById('result-savings').innerText = `${savingsValue.toLocaleString()} SEK`;
+        document.getElementById('result-minus').innerText = `-${minusValue}`;
+        document.getElementById('result-beaten').innerText = beatenPlayers;
+        document.getElementById('result-popup').style.display = 'flex';
+    }
+
+    function closeResultPopup() {
+        document.getElementById('result-popup').style.display = 'none';
+        document.getElementById('start-screen').style.display = 'flex';
+    }
+
+    function triggerScreenShake(frames = 8) {
+        screenShakeFrames = Math.max(screenShakeFrames, frames);
+    }
+
+    function triggerHitFlash(frames = 5) {
+        hitFlashFrames = Math.max(hitFlashFrames, frames);
+    }
+
+    function triggerCosmozPulse(color = '89,255,89', frames = 18) {
+        cosmozPulseColor = color;
+        cosmozPulseFrames = Math.max(cosmozPulseFrames, frames);
+    }
+
+    function showEventMessage(message, frames = 90) {
+        eventMessageText = message;
+        eventMessageFrames = Math.max(eventMessageFrames, frames);
+        document.getElementById('event-status').innerText = eventMessageText;
+    }
+
+    function markUserActivity() {
+        lastUserActivityAt = Date.now();
+    }
+
+    function updateDemoModeUI() {
+        const buttons = [document.getElementById('demo-toggle'), document.getElementById('demo-toggle-admin')].filter(Boolean);
+        const note = document.getElementById('demo-note');
+        buttons.forEach(btn => {
+            btn.innerText = `DEMO MODE: ${demoModeEnabled ? 'ON' : 'OFF'}`;
+            btn.style.background = demoModeEnabled ? '#59ff59' : '#2b2b44';
+            btn.style.color = demoModeEnabled ? '#00291f' : '#a5a5ff';
+        });
+        if (note) {
+            if (demoRunning) {
+                note.innerText = 'DEMO RUNNING - press any key/mouse to take over';
+            } else if (demoModeEnabled) {
+                note.innerText = 'DEMO will auto-start after inactivity';
+            } else {
+                note.innerText = '';
+            }
+        }
+    }
+
+    function stopDemoRun() {
+        if (!demoRunning) return;
+        demoRunning = false;
+        gameActive = false;
+        cosmozActive = false;
+        if (timerInterval) clearInterval(timerInterval);
+        document.getElementById('start-screen').style.display = 'flex';
+        document.getElementById('super-status').innerText = '';
+        updateDemoModeUI();
+    }
+
+    function startDemoRun() {
+        if (!demoModeEnabled || gameActive || demoRunning) return;
+        startGameSession('DEMO', 'BOT', 'NEOVICI', 'demo@neovici.local', { isDemo: true });
+    }
+
+    function toggleDemoMode() {
+        demoModeEnabled = !demoModeEnabled;
+        markUserActivity();
+        if (!demoModeEnabled) {
+            stopDemoRun();
+        }
+        updateDemoModeUI();
+    }
+
+    function enterFullscreen() {
+        const el = document.getElementById('game-wrapper');
+        if (!document.fullscreenElement && el.requestFullscreen) {
+            el.requestFullscreen().catch(() => {});
+        }
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    function getPlayerLaneY() {
+        return Math.max(0, canvas.height - player.height - 4);
+    }
+
+    function resizeCanvasToContainer() {
+        const bounds = canvas.getBoundingClientRect();
+        if (!bounds.width || !bounds.height) return;
+        const nextWidth = Math.max(640, Math.floor(bounds.width));
+        const nextHeight = Math.max(360, Math.floor(bounds.height));
+        if (canvas.width === nextWidth && canvas.height === nextHeight) return;
+        canvas.width = nextWidth;
+        canvas.height = nextHeight;
+        player.x = clamp(player.x, 0, canvas.width - player.width);
+        player.y = getPlayerLaneY();
+    }
+
+    function initGame() {
+        markUserActivity();
+        const firstName = document.getElementById('firstNameInput').value.trim();
+        const lastName = document.getElementById('lastNameInput').value.trim();
+        const company = document.getElementById('companyInput').value.trim();
+        const email = document.getElementById('emailInput').value.trim();
+        const consent = document.getElementById('consentCheck').checked;
+        const winnerPhotoConsent = document.getElementById('winnerPhotoConsent').checked;
+
+        if (firstName === '' || lastName === '') { alert('PLEASE ENTER YOUR FIRST AND LAST NAME!'); return; }
+        if (company === '') { alert('PLEASE ENTER YOUR COMPANY NAME!'); return; }
+        if (email === '' || !email.includes('@')) { alert('PLEASE ENTER A VALID EMAIL ADDRESS!'); return; }
+        if (!consent) { alert('PLEASE ACCEPT THE CONSENT TO PROCEED!'); return; }
+
+        startGameSession(firstName, lastName, company, email, { isDemo: false, winnerPhotoConsent });
+    }
+
+    function adminQuickStart() {
+        markUserActivity();
+        startGameSession('ADMIN', 'USER', 'NEOVICI', 'admin@neovici.local', { isDemo: false, isAdmin: true });
+    }
+
+    function startGameSession(firstName, lastName, company, email, options = {}) {
+        const isDemo = Boolean(options.isDemo);
+        const isAdmin = Boolean(options.isAdmin);
+        const winnerPhotoConsent = Boolean(options.winnerPhotoConsent);
+        demoRunning = isDemo;
+        currentSessionIsAdmin = isAdmin;
+        playerAlias = (firstName.charAt(0) + '. ' + lastName).toUpperCase().substring(0, 12);
+        currentPlayerEmail = email;
+        currentPlayerFirstName = firstName;
+        currentPlayerLastName = lastName;
+        document.getElementById('p-alias').innerText = playerAlias;
+        document.getElementById('start-screen').style.display = 'none';
+
+        if (!isDemo && !isAdmin) {
+            const registrations = JSON.parse(localStorage.getItem('neovici_registrations')) || [];
+            currentRegistrationId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+            registrations.push({ registrationId: currentRegistrationId, firstName, lastName, company, email, consent: true, photoLinkedinConsent: winnerPhotoConsent, score: 0, timestamp: new Date().toISOString() });
+            localStorage.setItem('neovici_registrations', JSON.stringify(registrations));
+        } else {
+            currentRegistrationId = '';
+        }
+
+        initAudio(); score = 0; frames = 0; timeRemaining = GAME_DURATION;
+        totalSavings = 0;
+        totalMinusPoints = 0;
+        lives = 3;
+        endedByLives = false;
+        superModeFrames = 0;
+        bullets = []; enemies = []; particles = []; cosmozDrops = []; bluffInvoices = [];
+        gameActive = true; cosmozActive = false;
+        screenShakeFrames = 0;
+        hitFlashFrames = 0;
+        cosmozPulseFrames = 0;
+        eventMessageFrames = 0;
+        eventMessageText = '';
+
+        enterFullscreen();
+        resizeCanvasToContainer();
+        player.y = getPlayerLaneY();
+        document.getElementById('savings').innerText = '0 SEK';
+        document.getElementById('lives').innerText = String(lives);
+        document.getElementById('timer').innerText = demoRunning ? 'DEMO' : '01:00';
+        document.getElementById('event-status').innerText = '';
+        document.getElementById('result-popup').style.display = 'none';
+        updateDemoModeUI();
+
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            if (!gameActive) return;
+            if (demoRunning) {
+                document.getElementById('timer').innerText = 'DEMO';
+                return;
+            }
+            timeRemaining--;
+            const m = Math.floor(timeRemaining / 60), s = timeRemaining % 60;
+            document.getElementById('timer').innerText = `0${m}:${s < 10 ? '0' + s : s}`;
+            if (timeRemaining <= 0) endGame();
+        }, 1000);
+        requestAnimationFrame(loop); playTone('sine', 440, 880, 0.3);
+    }
+
+    function endGame() {
+        gameActive = false; clearInterval(timerInterval);
+
+        if (demoRunning) {
+            demoRunning = false;
+            document.getElementById('super-status').innerText = '';
+            document.getElementById('start-screen').style.display = 'flex';
+            updateDemoModeUI();
+            return;
+        }
+
+        if (currentSessionIsAdmin) {
+            currentSessionIsAdmin = false;
+            showResultPopup(score, '-', totalSavings, totalMinusPoints, 0, false);
+            document.getElementById('super-status').innerText = '';
+            return;
+        }
+
+        const registrations = JSON.parse(localStorage.getItem('neovici_registrations')) || [];
+        if (currentRegistrationId) {
+            for (let i = registrations.length - 1; i >= 0; i--) {
+                if (registrations[i].registrationId === currentRegistrationId) {
+                    registrations[i].score = score;
+                    break;
+                }
+            }
+        } else {
+            for (let i = registrations.length - 1; i >= 0; i--) {
+                if (registrations[i].email === currentPlayerEmail) {
+                    registrations[i].score = score;
+                    break;
+                }
+            }
+        }
+        localStorage.setItem('neovici_registrations', JSON.stringify(registrations));
+
+        const leaderboardScores = getVisibleLeaderboardScores();
+        let isHighScore = false;
+        if (leaderboardScores.length < 10 || score > leaderboardScores[Math.min(leaderboardScores.length, 10) - 1].score) { isHighScore = true; }
+        if (endedByLives) {
+            isHighScore = false;
+        }
+        if (isHighScore) sfxHighScore(); else sfxGameOver();
+        const currentEntry = {
+            firstName: currentPlayerFirstName,
+            lastName: currentPlayerLastName,
+            score: score,
+            alias: playerAlias,
+            entryId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+        };
+        highScores.push(currentEntry);
+        latestEntryId = currentEntry.entryId;
+
+        const rankedScores = [...getVisibleLeaderboardScores()].sort((a, b) => b.score - a.score);
+        const placement = rankedScores.findIndex(entry => entry === currentEntry) + 1;
+        const beatenPlayers = Math.max(0, rankedScores.length - placement);
+
+        localStorage.setItem('neovici_scores', JSON.stringify(highScores));
+        updateHighScoreUI();
+        showResultPopup(score, placement, totalSavings, totalMinusPoints, beatenPlayers, isHighScore);
+        document.getElementById('super-status').innerText = '';
+        endedByLives = false;
+    }
+
+    function activateSuperMode() {
+        if (!gameActive) return;
+        superModeFrames = SUPER_MODE_DURATION_FRAMES;
+        if (!cosmozActive) sfxCosmoz();
+        triggerCosmozPulse('89,255,89', 22);
+        cosmozActive = true;
+    }
+
+    function setManual() {
+        if (!gameActive) return;
+        cosmozActive = false;
+        superModeFrames = 0;
+        document.getElementById('super-status').innerText = '';
+    }
+
+    function shoot(color) {
+        bullets.push({ x: player.x + 18, y: player.y, width: 4, height: 15, color: color });
+        sfxShoot();
+    }
+
+    function loop() { if (!gameActive) return; update(); draw(); requestAnimationFrame(loop); }
+
+    function getDifficulty() {
+        const elapsed = GAME_DURATION - timeRemaining;
+        const progress = elapsed / GAME_DURATION;
+        return {
+            spawnRate: Math.max(8, Math.floor(40 - progress * 32)),
+            enemySpeed: 2 + progress * 5,
+            maxEnemies: Math.floor(5 + progress * 15)
+        };
+    }
+
+    function hitTestRect(a, b) {
+        return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+    }
+
+    function spawnCosmozDrop() {
+        cosmozDrops.push({
+            x: Math.random() * (canvas.width - 40),
+            y: -44,
+            width: 40,
+            height: 40,
+            speed: 1.8 + Math.random() * 2.2,
+            sway: (Math.random() - 0.5) * 1.4,
+            phase: Math.random() * Math.PI * 2
+        });
+    }
+
+    function spawnBluffInvoice() {
+        bluffInvoices.push({
+            x: Math.random() * (canvas.width - 58),
+            y: -30,
+            width: 58,
+            height: 26,
+            speed: 2.1 + Math.random() * 2.8,
+            drift: (Math.random() - 0.5) * 0.8
+        });
+    }
+
+    function autoClearEnemies() {
+        if (enemies.length === 0) return;
+        const hits = enemies.length;
+        enemies.forEach(e => {
+            for (let k = 0; k < 6; k++) {
+                particles.push({
+                    x: e.x + e.width / 2,
+                    y: e.y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    life: 15,
+                    color: '#59ff59'
+                });
+            }
+        });
+        enemies = [];
+        score += hits;
+        totalSavings += hits * 250;
+        triggerScreenShake(9);
+        triggerHitFlash(4);
+        sfxExplosion();
+    }
+
+    function update() {
+        const diff = getDifficulty();
+        player.y = getPlayerLaneY();
+
+        if (!cosmozActive) {
+            if (demoRunning) {
+                const imminentBluff = bluffInvoices.find(item => item.y > player.y - 120);
+                if (imminentBluff) {
+                    if (imminentBluff.x + imminentBluff.width / 2 < player.x + player.width / 2) player.x += player.speed;
+                    else player.x -= player.speed;
+                } else if (enemies.length > 0) {
+                    const target = enemies.reduce((prev, curr) => (prev.y > curr.y ? prev : curr));
+                    const tx = target.x + target.width / 2;
+                    const px = player.x + player.width / 2;
+                    if (px < tx - 8) player.x += player.speed;
+                    if (px > tx + 8) player.x -= player.speed;
+                    if (frames % 16 === 0) shoot('#a5a5ff');
+                }
+            } else {
+                if (keys['ArrowLeft'] && player.x > 0) player.x -= player.speed;
+                if (keys['ArrowRight'] && player.x < canvas.width - player.width) player.x += player.speed;
+            }
+        } else {
+            if (enemies.length > 0) {
+                const target = enemies.reduce((prev, curr) => (prev.y > curr.y) ? prev : curr);
+                const tx = target.x + target.width / 2;
+                const px = player.x + player.width / 2;
+                const lockStep = demoRunning ? player.speed : 26;
+                if (px < tx - 10) player.x += lockStep;
+                else if (px > tx + 10) player.x -= lockStep;
+                else player.x = tx - player.width / 2;
+            } else {
+                // Cosmoz mode patrols the full lane when no direct target exists.
+                const lanePadding = 12;
+                const laneWidth = Math.max(1, canvas.width - player.width - lanePadding * 2);
+                const patrolT = (Math.sin(frames * 0.06) + 1) / 2;
+                const patrolX = lanePadding + (laneWidth * patrolT);
+                const delta = patrolX - player.x;
+                const patrolStep = demoRunning ? player.speed : 18;
+                player.x += Math.sign(delta) * Math.min(patrolStep, Math.abs(delta));
+            }
+
+            const clearRate = demoRunning ? 6 : 2;
+
+        // Keep ship inside the visible play area in all modes.
+        player.x = clamp(player.x, 0, canvas.width - player.width);
+            if (frames % clearRate === 0) autoClearEnemies();
+            superModeFrames--;
+            const secsLeft = Math.max(0, (superModeFrames / 60)).toFixed(1);
+            document.getElementById('super-status').innerText = `COSMOZ MODE ACTIVE ${secsLeft}s`;
+            if (superModeFrames <= 0) {
+                cosmozActive = false;
+                triggerCosmozPulse('255,110,110', 14);
+                document.getElementById('super-status').innerText = '';
+            }
+        }
+
+        bullets.forEach((b, i) => { b.y -= 15; if (b.y < 0) bullets.splice(i, 1); });
+
+        enemies.forEach((e, i) => {
+            e.y += e.speed;
+            if (e.y > canvas.height) enemies.splice(i, 1);
+            bullets.forEach((b, bi) => {
+                if (b.x > e.x && b.x < e.x + e.width && b.y > e.y && b.y < e.y + e.height) {
+                    enemies.splice(i, 1); bullets.splice(bi, 1); score++; sfxExplosion();
+                    if (cosmozActive) totalSavings += 250;
+                    triggerScreenShake(6);
+                    triggerHitFlash(3);
+                    for (let k = 0; k < 6; k++) particles.push({
+                        x: e.x + e.width / 2,
+                        y: e.y,
+                        vx: (Math.random() - 0.5) * 10,
+                        vy: (Math.random() - 0.5) * 10,
+                        life: 15,
+                        color: cosmozActive ? '#59ff59' : '#fff'
+                    });
+                }
+            });
+        });
+
+        bluffInvoices.forEach((item, i) => {
+            item.y += item.speed;
+            item.x += item.drift;
+            if (item.x < 0 || item.x > canvas.width - item.width) item.drift *= -1;
+            if (item.y > canvas.height + 40) bluffInvoices.splice(i, 1);
+
+            const shipRect = { x: player.x, y: player.y, width: player.width, height: player.height };
+            if (hitTestRect(shipRect, item)) {
+                if (cosmozActive) {
+                    bluffInvoices.splice(i, 1);
+                    triggerCosmozPulse('89,255,89', 6);
+                    return;
+                }
+                score -= 5;
+                totalMinusPoints += 5;
+                if (!demoRunning) lives -= 1;
+                sfxFraudPenalty();
+                triggerScreenShake(8);
+                triggerHitFlash(4);
+                triggerCosmozPulse('255,90,90', 10);
+                showEventMessage(demoRunning ? '-5 SCORE' : '-5 SCORE  |  -1 LIFE', 95);
+                bluffInvoices.splice(i, 1);
+                if (lives <= 0) {
+                    document.getElementById('lives').innerText = '0';
+                    endedByLives = true;
+                    showEventMessage('GAME OVER', 150);
+                    document.getElementById('super-status').innerText = 'GAME OVER';
+                    sfxGameOverMelody();
+                    endGame();
+                    return;
+                }
+            }
+        });
+
+        bullets.forEach((b, bi) => {
+            const bulletRect = { x: b.x, y: b.y, width: b.width, height: b.height };
+            bluffInvoices.forEach((item, i) => {
+                if (hitTestRect(bulletRect, item)) {
+                    if (cosmozActive) {
+                        return;
+                    }
+                    bullets.splice(bi, 1);
+                    bluffInvoices.splice(i, 1);
+                    score -= 3;
+                    totalMinusPoints += 3;
+                    if (!demoRunning) lives -= 1;
+                    sfxFraudPenalty();
+                    triggerScreenShake(6);
+                    triggerHitFlash(3);
+                    triggerCosmozPulse('255,90,90', 8);
+                    showEventMessage(demoRunning ? '-3 SCORE (FRAUD SHOT)' : '-3 SCORE  |  -1 LIFE (FRAUD SHOT)', 90);
+                    if (lives <= 0) {
+                        document.getElementById('lives').innerText = '0';
+                        endedByLives = true;
+                        showEventMessage('GAME OVER', 150);
+                        document.getElementById('super-status').innerText = 'GAME OVER';
+                        sfxGameOverMelody();
+                        endGame();
+                        return;
+                    }
+                }
+            });
+        });
+
+        cosmozDrops.forEach((drop, i) => {
+            drop.phase += 0.08;
+            drop.x += Math.sin(drop.phase) * 0.7 + drop.sway;
+            drop.y += drop.speed;
+            if (drop.y > canvas.height + 40) cosmozDrops.splice(i, 1);
+
+            bullets.forEach((b, bi) => {
+                const bulletRect = { x: b.x, y: b.y, width: b.width, height: b.height };
+                if (hitTestRect(bulletRect, drop)) {
+                    bullets.splice(bi, 1);
+                    cosmozDrops.splice(i, 1);
+                    activateSuperMode();
+                    for (let k = 0; k < 8; k++) particles.push({
+                        x: drop.x + drop.width / 2,
+                        y: drop.y + drop.height / 2,
+                        vx: (Math.random() - 0.5) * 8,
+                        vy: (Math.random() - 0.5) * 8,
+                        life: 18,
+                        color: '#59ff59'
+                    });
+                }
+            });
+        });
+
+        particles.forEach((p, i) => { p.x += p.vx; p.y += p.vy; p.life--; if (p.life <= 0) particles.splice(i, 1); });
+
+        const spawnRate = cosmozActive ? Math.max(4, diff.spawnRate - 10) : diff.spawnRate;
+        if (frames % spawnRate === 0 && enemies.length < diff.maxEnemies) {
+            enemies.push({ x: Math.random() * (canvas.width - 60), y: -30, width: 60, height: 25, speed: diff.enemySpeed + Math.random() * 2 });
+        }
+
+        if (frames % 90 === 0 && Math.random() < 0.6) {
+            spawnCosmozDrop();
+        }
+
+        if (frames % 70 === 0 && Math.random() < 0.58) {
+            spawnBluffInvoice();
+        }
+
+        document.getElementById('score').innerText = score;
+        document.getElementById('lives').innerText = String(Math.max(0, lives));
+        document.getElementById('savings').innerText = totalSavings.toLocaleString() + ' SEK';
+        if (eventMessageFrames > 0) {
+            eventMessageFrames--;
+            if (eventMessageFrames <= 0) {
+                document.getElementById('event-status').innerText = '';
+            }
+        }
+        if (screenShakeFrames > 0) screenShakeFrames--;
+        if (hitFlashFrames > 0) hitFlashFrames--;
+        if (cosmozPulseFrames > 0) cosmozPulseFrames--;
+        frames++;
+    }
+
+    function drawCosmozDrop(drop) {
+        const cx = drop.x + drop.width / 2;
+        const cy = drop.y + drop.height / 2;
+
+        ctx.fillStyle = '#102e2a';
+        ctx.fillRect(drop.x, drop.y, drop.width, drop.height);
+        ctx.strokeStyle = '#59ff59';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(drop.x, drop.y, drop.width, drop.height);
+
+        ctx.shadowColor = 'rgba(89,255,89,0.5)';
+        ctx.shadowBlur = 12;
+        if (cosmozLogoReady) {
+            ctx.drawImage(cosmozLogo, drop.x + 5, drop.y + 5, drop.width - 10, drop.height - 10);
+        } else {
+            ctx.fillStyle = '#59ff59';
+            ctx.beginPath();
+            ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#00302a';
+            ctx.font = "bold 10px 'Press Start 2P'";
+            ctx.textAlign = 'center';
+            ctx.fillText('C', cx, cy + 3);
+        }
+        ctx.shadowBlur = 0;
+        ctx.textAlign = 'start';
+    }
+
+    function drawBluffInvoice(item) {
+        ctx.fillStyle = '#2b2335';
+        ctx.fillRect(item.x, item.y, item.width, item.height);
+        ctx.strokeStyle = '#ff5959';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(item.x, item.y, item.width, item.height);
+        ctx.fillStyle = '#ff8b8b';
+        ctx.font = "9px 'Press Start 2P'";
+        ctx.fillText('FRAUD', item.x + 6, item.y + 16);
+    }
+
+    function draw() {
+        ctx.save();
+        if (screenShakeFrames > 0 && !demoRunning) {
+            const amp = Math.min(10, 2 + screenShakeFrames * 0.6);
+            ctx.translate((Math.random() - 0.5) * amp, (Math.random() - 0.5) * amp);
+        }
+
+        const safePlayerX = clamp(player.x, 0, canvas.width - player.width);
+        player.x = safePlayerX;
+        ctx.fillStyle = '#352879'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = cosmozActive ? '#59ff59' : '#ff6666';
+        ctx.beginPath(); ctx.moveTo(safePlayerX + 20, player.y); ctx.lineTo(safePlayerX + 40, player.y + 40); ctx.lineTo(safePlayerX, player.y + 40); ctx.fill();
+
+        enemies.forEach(e => {
+            ctx.fillStyle = '#fff'; ctx.fillRect(e.x, e.y, e.width, e.height);
+            ctx.fillStyle = '#000'; ctx.font = "10px 'Press Start 2P'"; ctx.fillText('INV', e.x + 10, e.y + 16);
+        });
+
+        bullets.forEach(b => { ctx.fillStyle = b.color; ctx.fillRect(b.x, b.y, b.width, b.height); });
+        particles.forEach(p => { ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 4, 4); });
+        cosmozDrops.forEach(drawCosmozDrop);
+        bluffInvoices.forEach(drawBluffInvoice);
+
+        if (cosmozActive) {
+            ctx.fillStyle = 'rgba(89,255,89,0.15)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            if (frames % 40 < 25) {
+                ctx.fillStyle = '#59ff59';
+                ctx.font = "20px 'Press Start 2P'"; ctx.textAlign = 'center';
+                ctx.fillText('COSMOZ MODE ONLINE', canvas.width / 2, 100);
+                ctx.font = '10px monospace';
+                ctx.fillText('AUTO-HIT ACTIVE', canvas.width / 2, 120);
+                ctx.textAlign = 'start';
+            }
+        }
+
+        ctx.restore();
+
+        if (hitFlashFrames > 0) {
+            const flashAlpha = Math.min(0.24, hitFlashFrames * 0.04);
+            ctx.fillStyle = `rgba(255,255,255,${flashAlpha})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        if (cosmozPulseFrames > 0) {
+            const pulseAlpha = Math.min(0.26, cosmozPulseFrames * 0.012);
+            ctx.fillStyle = `rgba(${cosmozPulseColor},${pulseAlpha})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+    }
+
+    (function cleanupOldData() {
+        const registrations = JSON.parse(localStorage.getItem('neovici_registrations')) || [];
+        const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+        const filtered = registrations.filter(r => new Date(r.timestamp).getTime() > thirtyDaysAgo);
+        localStorage.setItem('neovici_registrations', JSON.stringify(filtered));
+    })();
+
+    updateHighScoreUI();
+    updateDemoModeUI();
+    const resultPopupEl = document.getElementById('result-popup');
+    const gameWrapperEl = document.getElementById('game-wrapper');
+    if (resultPopupEl && gameWrapperEl && resultPopupEl.parentElement !== gameWrapperEl) {
+        gameWrapperEl.appendChild(resultPopupEl);
+    }
+    resizeCanvasToContainer();
+    window.addEventListener('resize', resizeCanvasToContainer);
+    document.addEventListener('fullscreenchange', resizeCanvasToContainer);
+    document.addEventListener('webkitfullscreenchange', resizeCanvasToContainer);
+    window.addEventListener('keydown', e => {
+        markUserActivity();
+        if (demoRunning) stopDemoRun();
+        const startScreenVisible = document.getElementById('start-screen').style.display !== 'none';
+        if (startScreenVisible && e.ctrlKey && e.shiftKey && e.code === 'Enter') {
+            e.preventDefault();
+            adminQuickStart();
+        }
+    });
+    ['mousemove', 'mousedown', 'touchstart'].forEach(evt => {
+        window.addEventListener(evt, () => {
+            markUserActivity();
+            if (demoRunning) stopDemoRun();
+        }, { passive: true });
+    });
+    setInterval(() => {
+        const startScreenVisible = document.getElementById('start-screen').style.display !== 'none';
+        if (demoModeEnabled && startScreenVisible && !gameActive && !demoRunning && (Date.now() - lastUserActivityAt > DEMO_IDLE_MS)) {
+            startDemoRun();
+        }
+    }, 1000);
+    ctx.fillStyle = '#352879'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+</script>
+</body>
+</html>
