@@ -806,6 +806,8 @@
     let eventMessageText = '';
     let adminSecretBuffer = '';
     let mobileDragTouchId = null;
+    let mobileDragStartClientX = 0;
+    let mobileDragStartPlayerX = 0;
     let headerClickCount = 0;
     let headerClickTimer = null;
 
@@ -843,6 +845,14 @@
             if (!rect.width) return;
             const canvasX = ((clientX - rect.left) / rect.width) * canvas.width;
             player.x = clamp(canvasX - (player.width / 2), 0, canvas.width - player.width);
+        }
+
+        function setPlayerFromRelativeDrag(clientX) {
+            const rect = canvas.getBoundingClientRect();
+            if (!rect.width) return;
+            const deltaClientX = clientX - mobileDragStartClientX;
+            const deltaCanvasX = (deltaClientX / rect.width) * canvas.width;
+            player.x = clamp(mobileDragStartPlayerX + deltaCanvasX, 0, canvas.width - player.width);
         }
 
         function getTouchCanvasPosition(touch) {
@@ -899,6 +909,7 @@
 
         gameWrapperEl.addEventListener('touchstart', e => {
             if (!document.body.classList.contains('game-running')) return;
+            if (e.target && e.target.closest && e.target.closest('#touch-controls')) return;
 
             Array.from(e.changedTouches).forEach(touch => {
                 const pos = getTouchCanvasPosition(touch);
@@ -907,7 +918,8 @@
                 const inDragZone = pos.y >= pos.rect.height * 0.45;
                 if (mobileDragTouchId === null && inDragZone) {
                     mobileDragTouchId = touch.identifier;
-                    setPlayerFromClientX(touch.clientX);
+                    mobileDragStartClientX = touch.clientX;
+                    mobileDragStartPlayerX = player.x;
                 }
             });
         }, { passive: false });
@@ -917,13 +929,15 @@
 
             const dragTouch = Array.from(e.touches).find(touch => touch.identifier === mobileDragTouchId);
             if (!dragTouch) return;
-            setPlayerFromClientX(dragTouch.clientX);
+            setPlayerFromRelativeDrag(dragTouch.clientX);
         }, { passive: false });
 
         function releaseDragTouch(e) {
             Array.from(e.changedTouches).forEach(touch => {
                 if (touch.identifier === mobileDragTouchId) {
                     mobileDragTouchId = null;
+                    mobileDragStartClientX = 0;
+                    mobileDragStartPlayerX = player.x;
                 }
             });
         }
