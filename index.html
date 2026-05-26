@@ -786,6 +786,49 @@
         statusEl.style.color = color;
     }
 
+    function parseSupabaseErrorMessage(message) {
+        try {
+            const parsed = JSON.parse(message);
+            return parsed.message || parsed.error_description || parsed.details || message;
+        } catch {
+            return message;
+        }
+    }
+
+    function sanitizeRemoteText(value, maxLength, fallback = 'PLAYER') {
+        const trimmed = String(value || '').trim().replace(/\s+/g, ' ');
+        const safeValue = trimmed || fallback;
+        return safeValue.slice(0, maxLength);
+    }
+
+    function buildRemoteLeaderboardEntry(entryId, firstName, lastName, alias, scoreValue, savingsValue, minusValue) {
+        return {
+            entry_id: entryId,
+            first_name: sanitizeRemoteText(firstName, 20, 'PLAYER'),
+            last_name: sanitizeRemoteText(lastName, 20, 'PLAYER'),
+            alias: sanitizeRemoteText(alias, 20, 'PLAYER'),
+            score: Math.max(0, Math.floor(Number(scoreValue) || 0)),
+            savings: Math.max(0, Math.floor(Number(savingsValue) || 0)),
+            minus_points: Math.max(0, Math.floor(Number(minusValue) || 0))
+        };
+    }
+
+    function buildRemoteRegistrationEntry(draft, scoreValue, savingsValue, minusValue) {
+        return {
+            registration_id: draft.registrationId,
+            first_name: sanitizeRemoteText(draft.firstName, 20, 'PLAYER'),
+            last_name: sanitizeRemoteText(draft.lastName, 20, 'PLAYER'),
+            company: sanitizeRemoteText(draft.company, 80, 'NEOVICI'),
+            email: String(draft.email || '').trim(),
+            consent: true,
+            photo_linkedin_consent: Boolean(draft.photoLinkedinConsent),
+            score: Math.max(0, Math.floor(Number(scoreValue) || 0)),
+            savings: Math.max(0, Math.floor(Number(savingsValue) || 0)),
+            minus_points: Math.max(0, Math.floor(Number(minusValue) || 0)),
+            created_at: draft.timestamp
+        };
+    }
+
     async function supabaseRequest(path, options = {}) {
         const supabaseUrl = getSupabaseUrl();
         const supabasePublicKey = getSupabasePublicKey();
@@ -812,7 +855,7 @@
 
         if (!response.ok) {
             const message = await response.text();
-            throw new Error(message || `Supabase request failed with ${response.status}`);
+            throw new Error(parseSupabaseErrorMessage(message || `Supabase request failed with ${response.status}`));
         }
 
         if (response.status === 204) return null;
@@ -1440,19 +1483,7 @@
         const persistedScore = Math.max(0, score);
 
         if (currentRegistrationDraft) {
-            const remoteRegistration = {
-                registration_id: currentRegistrationDraft.registrationId,
-                first_name: currentRegistrationDraft.firstName,
-                last_name: currentRegistrationDraft.lastName,
-                company: currentRegistrationDraft.company || '',
-                email: currentRegistrationDraft.email,
-                consent: true,
-                photo_linkedin_consent: Boolean(currentRegistrationDraft.photoLinkedinConsent),
-                score: persistedScore,
-                savings: totalSavings,
-                minus_points: totalMinusPoints,
-                created_at: currentRegistrationDraft.timestamp
-            };
+            const remoteRegistration = buildRemoteRegistrationEntry(currentRegistrationDraft, persistedScore, totalSavings, totalMinusPoints);
 
             insertRemoteRegistration(remoteRegistration).catch(error => {
                 console.warn('Supabase registration insert failed.', error);
@@ -1486,21 +1517,24 @@
         document.getElementById('super-status').innerText = '';
         endedByLives = false;
 
-        insertRemoteScore({
-            entry_id: currentEntry.entryId,
-            first_name: currentEntry.firstName,
-            last_name: currentEntry.lastName,
-            alias: currentEntry.alias,
-            score: persistedScore,
-            savings: totalSavings,
-            minus_points: totalMinusPoints
-        }).then(() => {
+        const remoteLeaderboardEntry = buildRemoteLeaderboardEntry(
+            currentEntry.entryId,
+            currentEntry.firstName,
+            currentEntry.lastName,
+            currentEntry.alias,
+            persistedScore,
+            totalSavings,
+            totalMinusPoints
+        );
+
+        insertRemoteScore(remoteLeaderboardEntry).then(() => {
             setResultSyncStatus('SYNC STATUS: SAVED TO CLOUD', '#59ff59');
             loadRemoteHighScores();
         }).catch(error => {
             leaderboardSyncState = 'error';
             updateLeaderboardStorageLabel();
-            setResultSyncStatus('SYNC STATUS: CLOUD SAVE FAILED', '#ff7b7b');
+            const reason = sanitizeRemoteText(error && error.message ? error.message : 'UNKNOWN ERROR', 60, 'UNKNOWN ERROR');
+            setResultSyncStatus(`SYNC STATUS: CLOUD SAVE FAILED (${reason})`, '#ff7b7b');
             console.warn('Supabase leaderboard insert failed.', error);
         });
 
