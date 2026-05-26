@@ -9,6 +9,11 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
+        html, body {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
         body {
             background-color: #111;
             display: flex;
@@ -409,11 +414,65 @@
         }
 
         /* iOS scroll lock during gameplay */
+        html.game-running,
         body.game-running {
             overflow: hidden;
-            position: fixed;
             width: 100%;
-            top: 0;
+            height: 100%;
+        }
+
+        body.game-running {
+            position: fixed;
+            inset: 0;
+        }
+
+        body.touch-device.game-running #main-header,
+        body.touch-device.game-running #highscore-panel,
+        body.touch-device.game-running #admin-hub,
+        body.touch-device.game-running #created-by-badge {
+            display: none !important;
+        }
+
+        body.touch-device.game-running .layout-grid {
+            width: 100vw;
+            height: 100dvh;
+            max-width: 100vw;
+            margin: 0;
+            display: block;
+        }
+
+        body.touch-device.game-running #game-wrapper,
+        body.touch-device.game-running #game-wrapper:fullscreen,
+        body.touch-device.game-running #game-wrapper:-webkit-full-screen {
+            position: fixed;
+            inset:
+                env(safe-area-inset-top, 0px)
+                env(safe-area-inset-right, 0px)
+                env(safe-area-inset-bottom, 0px)
+                env(safe-area-inset-left, 0px);
+            width: auto;
+            height: auto;
+            max-width: none;
+            border-radius: 0;
+            padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px)) 8px;
+            z-index: 1400;
+            box-shadow: none;
+        }
+
+        body.touch-device.game-running canvas {
+            height: calc(100% - 96px);
+        }
+
+        body.touch-device.game-running .crt-overlay {
+            top: 8px;
+            left: 8px;
+            right: 8px;
+            bottom: 88px;
+            border-radius: 0;
+        }
+
+        body.touch-device.game-running #ui-layer {
+            margin-top: 6px;
         }
         .touch-btn {
             width: 76px;
@@ -523,6 +582,23 @@
             #dashboard { font-size: 8px; padding: 6px; }
 
             #ui-layer button { font-size: 8px; padding: 8px 10px; }
+
+            body.touch-device.game-running #ui-layer {
+                margin-top: 4px;
+            }
+
+            body.touch-device.game-running #dashboard {
+                margin-bottom: 6px;
+            }
+
+            body.touch-device.game-running #powerup-hint,
+            body.touch-device.game-running #super-status,
+            body.touch-device.game-running #event-status,
+            body.touch-device.game-running #hud-website,
+            body.touch-device.game-running #ui-layer > div:last-child,
+            body.touch-device.game-running #ui-layer > button {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -648,6 +724,7 @@
 
 <script>
     const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
     let audioCtx;
 
     function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
@@ -748,7 +825,69 @@
     window.addEventListener('keyup', e => keys[e.code] = false);
     window.addEventListener('keydown', e => { if (e.code === 'Space' && gameActive && !cosmozActive) shoot('#a5a5ff'); });
 
-    // Touch controls\n    (function setupTouchControls() {\n        const tcLeft = document.getElementById('tc-left');\n        const tcRight = document.getElementById('tc-right');\n        const tcFire = document.getElementById('tc-fire');\n        function hold(key, active) { keys[key] = active; }\n        tcLeft.addEventListener('touchstart',  e => { e.preventDefault(); hold('ArrowLeft', true);  tcLeft.classList.add('pressed'); },    { passive: false });\n        tcLeft.addEventListener('touchend',    e => { e.preventDefault(); hold('ArrowLeft', false); tcLeft.classList.remove('pressed'); }, { passive: false });\n        tcLeft.addEventListener('touchcancel', ()  => { hold('ArrowLeft', false); tcLeft.classList.remove('pressed'); });\n        tcRight.addEventListener('touchstart',  e => { e.preventDefault(); hold('ArrowRight', true);  tcRight.classList.add('pressed'); },    { passive: false });\n        tcRight.addEventListener('touchend',    e => { e.preventDefault(); hold('ArrowRight', false); tcRight.classList.remove('pressed'); }, { passive: false });\n        tcRight.addEventListener('touchcancel', ()  => { hold('ArrowRight', false); tcRight.classList.remove('pressed'); });\n        tcFire.addEventListener('touchstart',  e => { e.preventDefault(); if (gameActive && !cosmozActive) shoot('#a5a5ff'); tcFire.classList.add('pressed'); },    { passive: false });\n        tcFire.addEventListener('touchend',    e => { e.preventDefault(); tcFire.classList.remove('pressed'); }, { passive: false });\n        tcFire.addEventListener('touchcancel', ()  => { tcFire.classList.remove('pressed'); });\n\n        // Prevent iOS Safari from scrolling the page when touching game area\n        document.getElementById('game-wrapper').addEventListener('touchmove', e => {\n            e.preventDefault();\n        }, { passive: false });\n    })();
+    // Touch controls
+    (function setupTouchControls() {
+        const tcLeft = document.getElementById('tc-left');
+        const tcRight = document.getElementById('tc-right');
+        const tcFire = document.getElementById('tc-fire');
+        const gameWrapperEl = document.getElementById('game-wrapper');
+
+        function hold(key, active) {
+            keys[key] = active;
+        }
+
+        tcLeft.addEventListener('touchstart', e => {
+            e.preventDefault();
+            hold('ArrowLeft', true);
+            tcLeft.classList.add('pressed');
+        }, { passive: false });
+        tcLeft.addEventListener('touchend', e => {
+            e.preventDefault();
+            hold('ArrowLeft', false);
+            tcLeft.classList.remove('pressed');
+        }, { passive: false });
+        tcLeft.addEventListener('touchcancel', () => {
+            hold('ArrowLeft', false);
+            tcLeft.classList.remove('pressed');
+        });
+
+        tcRight.addEventListener('touchstart', e => {
+            e.preventDefault();
+            hold('ArrowRight', true);
+            tcRight.classList.add('pressed');
+        }, { passive: false });
+        tcRight.addEventListener('touchend', e => {
+            e.preventDefault();
+            hold('ArrowRight', false);
+            tcRight.classList.remove('pressed');
+        }, { passive: false });
+        tcRight.addEventListener('touchcancel', () => {
+            hold('ArrowRight', false);
+            tcRight.classList.remove('pressed');
+        });
+
+        tcFire.addEventListener('touchstart', e => {
+            e.preventDefault();
+            if (gameActive && !cosmozActive) shoot('#a5a5ff');
+            tcFire.classList.add('pressed');
+        }, { passive: false });
+        tcFire.addEventListener('touchend', e => {
+            e.preventDefault();
+            tcFire.classList.remove('pressed');
+        }, { passive: false });
+        tcFire.addEventListener('touchcancel', () => {
+            tcFire.classList.remove('pressed');
+        });
+
+        // Prevent iOS Safari from starting page pan/zoom gestures on the game area.
+        ['touchstart', 'touchmove'].forEach(eventName => {
+            gameWrapperEl.addEventListener(eventName, e => {
+                if (document.body.classList.contains('game-running')) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+        });
+    })();
 
     window.addEventListener('keydown', e => {
         const adminModifier = e.ctrlKey || e.metaKey;
@@ -915,8 +1054,20 @@
 
     function enterFullscreen() {
         const el = document.getElementById('game-wrapper');
-        if (!document.fullscreenElement && el.requestFullscreen) {
-            el.requestFullscreen().catch(() => {});
+        const requestFullscreen = el.requestFullscreen || el.webkitRequestFullscreen || el.webkitEnterFullscreen;
+        if (!document.fullscreenElement && requestFullscreen) {
+            Promise.resolve(requestFullscreen.call(el)).catch(() => {});
+        }
+    }
+
+    function syncGameFocusMode(active) {
+        document.documentElement.classList.toggle('game-running', active);
+        document.body.classList.toggle('game-running', active);
+        if (isTouchDevice) {
+            document.body.classList.add('touch-device');
+        }
+        if (active) {
+            window.scrollTo(0, 0);
         }
     }
 
@@ -1007,8 +1158,8 @@
         document.getElementById('event-status').innerText = '';
         document.getElementById('result-popup').style.display = 'none';
         updateDemoModeUI();
-        // Lock scroll on iOS during gameplay (non-demo only)
-        if (!isDemo) document.body.classList.add('game-running');
+        // Lock scroll and enter mobile focus mode during active play.
+        syncGameFocusMode(true);
 
         if (timerInterval) clearInterval(timerInterval);
         timerInterval = setInterval(() => {
@@ -1027,8 +1178,8 @@
 
     function endGame() {
         gameActive = false; clearInterval(timerInterval);
-        // Unlock iOS scroll lock and hide touch controls
-        document.body.classList.remove('game-running');
+        // Restore normal page layout when the run ends.
+        syncGameFocusMode(false);
 
         if (demoRunning) {
             demoRunning = false;
