@@ -922,8 +922,7 @@
                 const pos = getTouchCanvasPosition(touch);
                 if (pos.x < 0 || pos.x > pos.rect.width || pos.y < 0 || pos.y > pos.rect.height) return;
 
-                const inDragZone = pos.y >= pos.rect.height * 0.45;
-                if (mobileDragTouchId === null && inDragZone) {
+                if (mobileDragTouchId === null) {
                     mobileDragTouchId = touch.identifier;
                     mobileDragStartClientX = touch.clientX;
                     mobileDragStartPlayerX = player.x;
@@ -1138,16 +1137,6 @@
         document.documentElement.style.setProperty('--app-height', `${Math.round(viewportHeight)}px`);
     }
 
-    async function requestLandscapeOrientation() {
-        try {
-            if (screen.orientation && screen.orientation.lock) {
-                await screen.orientation.lock('landscape');
-            }
-        } catch (_) {
-            // iOS Safari does not support orientation lock for normal webpages.
-        }
-    }
-
     function syncGameFocusMode(active) {
         document.documentElement.classList.toggle('game-running', active);
         document.body.classList.toggle('game-running', active);
@@ -1249,7 +1238,6 @@
         updateDemoModeUI();
         // Lock scroll and enter mobile focus mode during active play.
         syncGameFocusMode(true);
-        requestLandscapeOrientation();
 
         if (timerInterval) clearInterval(timerInterval);
         timerInterval = setInterval(() => {
