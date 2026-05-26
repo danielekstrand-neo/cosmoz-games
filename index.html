@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>COSMOZ BY NEOVICI</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
@@ -218,6 +220,7 @@
             height: calc(100% - 132px);
             image-rendering: pixelated;
             border-radius: 8px;
+            touch-action: none;
         }
 
         #start-screen {
@@ -394,15 +397,23 @@
 
         /* ── Touch controls ── */
         #touch-controls {
-            display: none;
+            display: none; /* shown via JS + body.game-running on touch devices */
             position: absolute;
             bottom: 130px;
             left: 24px;
             right: 24px;
             justify-content: space-between;
             align-items: flex-end;
-            z-index: 15;
-            pointer-events: none;
+            z-index: 25;
+            pointer-events: auto;
+        }
+
+        /* iOS scroll lock during gameplay */
+        body.game-running {
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            top: 0;
         }
         .touch-btn {
             width: 76px;
@@ -436,7 +447,7 @@
         .touch-btn-fire.pressed { background: rgba(89,255,89,0.45); transform: scale(0.93); }
 
         @media (pointer: coarse) {
-            #touch-controls { display: flex; }
+            body.game-running #touch-controls { display: flex; }
         }
 
         @media (max-width: 1120px) {
@@ -737,22 +748,7 @@
     window.addEventListener('keyup', e => keys[e.code] = false);
     window.addEventListener('keydown', e => { if (e.code === 'Space' && gameActive && !cosmozActive) shoot('#a5a5ff'); });
 
-    // Touch controls
-    (function setupTouchControls() {
-        const tcLeft = document.getElementById('tc-left');
-        const tcRight = document.getElementById('tc-right');
-        const tcFire = document.getElementById('tc-fire');
-        function hold(key, active) { keys[key] = active; }
-        tcLeft.addEventListener('touchstart',  e => { e.preventDefault(); hold('ArrowLeft', true);  tcLeft.classList.add('pressed'); },    { passive: false });
-        tcLeft.addEventListener('touchend',    e => { e.preventDefault(); hold('ArrowLeft', false); tcLeft.classList.remove('pressed'); }, { passive: false });
-        tcLeft.addEventListener('touchcancel', ()  => { hold('ArrowLeft', false); tcLeft.classList.remove('pressed'); });
-        tcRight.addEventListener('touchstart',  e => { e.preventDefault(); hold('ArrowRight', true);  tcRight.classList.add('pressed'); },    { passive: false });
-        tcRight.addEventListener('touchend',    e => { e.preventDefault(); hold('ArrowRight', false); tcRight.classList.remove('pressed'); }, { passive: false });
-        tcRight.addEventListener('touchcancel', ()  => { hold('ArrowRight', false); tcRight.classList.remove('pressed'); });
-        tcFire.addEventListener('touchstart',  e => { e.preventDefault(); if (gameActive && !cosmozActive) shoot('#a5a5ff'); tcFire.classList.add('pressed'); },    { passive: false });
-        tcFire.addEventListener('touchend',    e => { e.preventDefault(); tcFire.classList.remove('pressed'); }, { passive: false });
-        tcFire.addEventListener('touchcancel', ()  => { tcFire.classList.remove('pressed'); });
-    })();
+    // Touch controls\n    (function setupTouchControls() {\n        const tcLeft = document.getElementById('tc-left');\n        const tcRight = document.getElementById('tc-right');\n        const tcFire = document.getElementById('tc-fire');\n        function hold(key, active) { keys[key] = active; }\n        tcLeft.addEventListener('touchstart',  e => { e.preventDefault(); hold('ArrowLeft', true);  tcLeft.classList.add('pressed'); },    { passive: false });\n        tcLeft.addEventListener('touchend',    e => { e.preventDefault(); hold('ArrowLeft', false); tcLeft.classList.remove('pressed'); }, { passive: false });\n        tcLeft.addEventListener('touchcancel', ()  => { hold('ArrowLeft', false); tcLeft.classList.remove('pressed'); });\n        tcRight.addEventListener('touchstart',  e => { e.preventDefault(); hold('ArrowRight', true);  tcRight.classList.add('pressed'); },    { passive: false });\n        tcRight.addEventListener('touchend',    e => { e.preventDefault(); hold('ArrowRight', false); tcRight.classList.remove('pressed'); }, { passive: false });\n        tcRight.addEventListener('touchcancel', ()  => { hold('ArrowRight', false); tcRight.classList.remove('pressed'); });\n        tcFire.addEventListener('touchstart',  e => { e.preventDefault(); if (gameActive && !cosmozActive) shoot('#a5a5ff'); tcFire.classList.add('pressed'); },    { passive: false });\n        tcFire.addEventListener('touchend',    e => { e.preventDefault(); tcFire.classList.remove('pressed'); }, { passive: false });\n        tcFire.addEventListener('touchcancel', ()  => { tcFire.classList.remove('pressed'); });\n\n        // Prevent iOS Safari from scrolling the page when touching game area\n        document.getElementById('game-wrapper').addEventListener('touchmove', e => {\n            e.preventDefault();\n        }, { passive: false });\n    })();
 
     window.addEventListener('keydown', e => {
         const adminModifier = e.ctrlKey || e.metaKey;
@@ -1011,6 +1007,8 @@
         document.getElementById('event-status').innerText = '';
         document.getElementById('result-popup').style.display = 'none';
         updateDemoModeUI();
+        // Lock scroll on iOS during gameplay (non-demo only)
+        if (!isDemo) document.body.classList.add('game-running');
 
         if (timerInterval) clearInterval(timerInterval);
         timerInterval = setInterval(() => {
@@ -1029,6 +1027,8 @@
 
     function endGame() {
         gameActive = false; clearInterval(timerInterval);
+        // Unlock iOS scroll lock and hide touch controls
+        document.body.classList.remove('game-running');
 
         if (demoRunning) {
             demoRunning = false;
