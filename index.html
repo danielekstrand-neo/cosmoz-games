@@ -506,7 +506,11 @@
         .touch-btn-fire.pressed { background: rgba(89,255,89,0.45); transform: scale(0.93); }
 
         @media (pointer: coarse) {
-            body.game-running #touch-controls { display: flex; justify-content: center; }
+            body.game-running #touch-controls {
+                display: flex;
+                justify-content: flex-start;
+                padding-left: 10px;
+            }
             body.game-running #touch-controls .touch-btn:not(.touch-btn-fire) { display: none; }
         }
 
