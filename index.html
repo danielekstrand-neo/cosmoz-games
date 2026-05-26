@@ -506,7 +506,7 @@
         .touch-btn-fire.pressed { background: rgba(89,255,89,0.45); transform: scale(0.93); }
 
         @media (pointer: coarse) {
-            body.game-running #touch-controls { display: flex; }
+            body.game-running #touch-controls { display: none; }
         }
 
         @media (max-width: 1120px) {
@@ -642,7 +642,7 @@
             <p style="font-size:9px; color:#59ff59; max-width:520px; line-height:1.7;">Shoot random falling COSMOZ icons to trigger COSMOZ MODE for 3 seconds.</p>
             <div style="font-size:8px; color:#bfc7ff; text-align:left; max-width:520px; line-height:1.8; margin:6px 0 8px 0; background:#13132a; border:1px solid #2f2f66; border-radius:8px; padding:8px 10px;">
                 <strong style="color:#59ff59;">HOW TO PLAY (EN)</strong><br>
-                Move with LEFT/RIGHT or tap the on-screen buttons. Shoot with SPACEBAR or the FIRE button.<br>
+                Move with LEFT/RIGHT on desktop. On mobile, drag the ship with your thumb and tap the play area to shoot.<br>
                 You have 3 lives.<br>
                 Avoid fraudulent invoices: if they hit you or you shoot them, you lose points and lives.<br>
                 Shoot COSMOZ logos to activate COSMOZ MODE.
@@ -804,6 +804,7 @@
     let eventMessageFrames = 0;
     let eventMessageText = '';
     let adminSecretBuffer = '';
+    let mobileDragTouchId = null;
     let headerClickCount = 0;
     let headerClickTimer = null;
 
@@ -834,6 +835,22 @@
 
         function hold(key, active) {
             keys[key] = active;
+        }
+
+        function setPlayerFromClientX(clientX) {
+            const rect = canvas.getBoundingClientRect();
+            if (!rect.width) return;
+            const canvasX = ((clientX - rect.left) / rect.width) * canvas.width;
+            player.x = clamp(canvasX - (player.width / 2), 0, canvas.width - player.width);
+        }
+
+        function getTouchCanvasPosition(touch) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                rect,
+                x: touch.clientX - rect.left,
+                y: touch.clientY - rect.top
+            };
         }
 
         tcLeft.addEventListener('touchstart', e => {
@@ -878,6 +895,45 @@
         tcFire.addEventListener('touchcancel', () => {
             tcFire.classList.remove('pressed');
         });
+
+        gameWrapperEl.addEventListener('touchstart', e => {
+            if (!document.body.classList.contains('game-running')) return;
+
+            Array.from(e.changedTouches).forEach(touch => {
+                const pos = getTouchCanvasPosition(touch);
+                if (pos.x < 0 || pos.x > pos.rect.width || pos.y < 0 || pos.y > pos.rect.height) return;
+
+                const inDragZone = pos.y >= pos.rect.height * 0.45;
+                if (mobileDragTouchId === null && inDragZone) {
+                    mobileDragTouchId = touch.identifier;
+                    setPlayerFromClientX(touch.clientX);
+                    return;
+                }
+
+                if (gameActive && !cosmozActive) {
+                    shoot('#a5a5ff');
+                }
+            });
+        }, { passive: false });
+
+        gameWrapperEl.addEventListener('touchmove', e => {
+            if (!document.body.classList.contains('game-running')) return;
+
+            const dragTouch = Array.from(e.touches).find(touch => touch.identifier === mobileDragTouchId);
+            if (!dragTouch) return;
+            setPlayerFromClientX(dragTouch.clientX);
+        }, { passive: false });
+
+        function releaseDragTouch(e) {
+            Array.from(e.changedTouches).forEach(touch => {
+                if (touch.identifier === mobileDragTouchId) {
+                    mobileDragTouchId = null;
+                }
+            });
+        }
+
+        gameWrapperEl.addEventListener('touchend', releaseDragTouch, { passive: false });
+        gameWrapperEl.addEventListener('touchcancel', releaseDragTouch, { passive: false });
 
         // Prevent iOS Safari from starting page pan/zoom gestures on the game area.
         ['touchstart', 'touchmove'].forEach(eventName => {
