@@ -859,7 +859,15 @@
         }
 
         if (response.status === 204) return null;
-        return response.json();
+
+        const responseText = await response.text();
+        if (!responseText) return null;
+
+        try {
+            return JSON.parse(responseText);
+        } catch {
+            return responseText;
+        }
     }
 
     function mapRemoteScore(row) {
