@@ -511,7 +511,7 @@
                 justify-content: flex-start;
                 left: calc(12px + env(safe-area-inset-left, 0px));
                 right: auto;
-                bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+                bottom: calc(92px + env(safe-area-inset-bottom, 0px));
                 padding-left: 0;
             }
             body.game-running #touch-controls .touch-btn:not(.touch-btn-fire) { display: none; }
@@ -558,7 +558,7 @@
             }
 
             #touch-controls {
-                bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+                bottom: calc(92px + env(safe-area-inset-bottom, 0px));
                 left: calc(10px + env(safe-area-inset-left, 0px));
                 right: auto;
             }
@@ -747,14 +747,14 @@
     }
 
     const supabaseUrl = normalizeSupabaseUrl(supabaseRuntimeConfig.url);
-    const supabaseAnonKey = String(supabaseRuntimeConfig.anonKey || '').trim();
-    const supabaseEnabled = Boolean(supabaseUrl && supabaseAnonKey.includes('.'));
+    const supabasePublicKey = String(supabaseRuntimeConfig.publishableKey || supabaseRuntimeConfig.anonKey || '').trim();
+    const supabaseEnabled = Boolean(supabaseUrl && supabasePublicKey.length > 20);
 
     async function supabaseRequest(path, options = {}) {
         const { method = 'GET', body } = options;
         const headers = {
-            apikey: supabaseAnonKey,
-            Authorization: `Bearer ${supabaseAnonKey}`,
+            apikey: supabasePublicKey,
+            Authorization: `Bearer ${supabasePublicKey}`,
             ...options.headers
         };
 
@@ -1377,6 +1377,8 @@
         }
         localStorage.setItem('neovici_registrations', JSON.stringify(registrations));
 
+        const persistedScore = Math.max(0, score);
+
         if (currentRegistrationDraft) {
             const remoteRegistration = {
                 registration_id: currentRegistrationDraft.registrationId,
@@ -1386,7 +1388,7 @@
                 email: currentRegistrationDraft.email,
                 consent: true,
                 photo_linkedin_consent: Boolean(currentRegistrationDraft.photoLinkedinConsent),
-                score,
+                score: persistedScore,
                 savings: totalSavings,
                 minus_points: totalMinusPoints,
                 created_at: currentRegistrationDraft.timestamp
@@ -1429,7 +1431,7 @@
             first_name: currentEntry.firstName,
             last_name: currentEntry.lastName,
             alias: currentEntry.alias,
-            score: currentEntry.score,
+            score: persistedScore,
             savings: totalSavings,
             minus_points: totalMinusPoints
         }).then(() => {
