@@ -630,7 +630,7 @@
     <div id="highscore-panel">
         <h3>LEADERBOARD</h3>
         <ul id="hs-list"><li style="text-align:center;">LOADING...</li></ul>
-        <div style="margin-top:auto; font-size:8px; color:#666; text-align: center;">NEOVICI SYSTEMS<br>LOCAL STORAGE</div>
+        <div id="leaderboard-storage-label" style="margin-top:auto; font-size:8px; color:#666; text-align: center;">NEOVICI SYSTEMS<br>SYNC CHECK...</div>
     </div>
 
     <div id="game-wrapper">
@@ -724,6 +724,7 @@
             <div class="result-item">BEATEN PLAYERS<br><strong id="result-beaten">0</strong></div>
             <div class="result-item">TOTAL MINUS<br><strong id="result-minus">0</strong></div>
         </div>
+        <div id="result-sync-status" style="margin-top:12px; font-size:10px; color:#8f8fb3; text-align:center;">SYNC STATUS: PENDING</div>
         <div class="result-actions">
             <button id="result-close-btn" onclick="closeResultPopup()">TRY AGAIN</button>
         </div>
@@ -734,7 +735,6 @@
 <script>
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     const isTouchDevice = window.matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-    const supabaseRuntimeConfig = window.COSMOZ_SUPABASE_CONFIG || {};
     let audioCtx;
 
     function normalizeSupabaseUrl(value) {
@@ -746,11 +746,53 @@
         return input.replace(/\/$/, '');
     }
 
-    const supabaseUrl = normalizeSupabaseUrl(supabaseRuntimeConfig.url);
-    const supabasePublicKey = String(supabaseRuntimeConfig.publishableKey || supabaseRuntimeConfig.anonKey || '').trim();
-    const supabaseEnabled = Boolean(supabaseUrl && supabasePublicKey.length > 20);
+    function getSupabaseRuntimeConfig() {
+        return window.COSMOZ_SUPABASE_CONFIG || {};
+    }
+
+    function getSupabaseUrl() {
+        return normalizeSupabaseUrl(getSupabaseRuntimeConfig().url);
+    }
+
+    function getSupabasePublicKey() {
+        const config = getSupabaseRuntimeConfig();
+        return String(config.publishableKey || config.anonKey || '').trim();
+    }
+
+    function isSupabaseEnabled() {
+        const url = getSupabaseUrl();
+        const key = getSupabasePublicKey();
+        return Boolean(url && key.length > 20);
+    }
+
+    let leaderboardSyncState = isSupabaseEnabled() ? 'loading' : 'local';
+
+    function updateLeaderboardStorageLabel() {
+        const label = document.getElementById('leaderboard-storage-label');
+        if (!label) return;
+        const states = {
+            loading: 'NEOVICI SYSTEMS<br>CLOUD SYNC...',
+            remote: 'NEOVICI SYSTEMS<br>CLOUD LEADERBOARD',
+            local: 'NEOVICI SYSTEMS<br>LOCAL CACHE',
+            error: 'NEOVICI SYSTEMS<br>CLOUD ERROR / LOCAL CACHE'
+        };
+        label.innerHTML = states[leaderboardSyncState] || states.local;
+    }
+
+    function setResultSyncStatus(message, color = '#8f8fb3') {
+        const statusEl = document.getElementById('result-sync-status');
+        if (!statusEl) return;
+        statusEl.innerText = message;
+        statusEl.style.color = color;
+    }
 
     async function supabaseRequest(path, options = {}) {
+        const supabaseUrl = getSupabaseUrl();
+        const supabasePublicKey = getSupabasePublicKey();
+        if (!supabaseUrl || supabasePublicKey.length <= 20) {
+            throw new Error('Supabase configuration missing');
+        }
+
         const { method = 'GET', body } = options;
         const headers = {
             apikey: supabasePublicKey,
@@ -788,18 +830,30 @@
     }
 
     async function loadRemoteHighScores() {
-        if (!supabaseEnabled) return;
+        if (!isSupabaseEnabled()) {
+            leaderboardSyncState = 'local';
+            updateLeaderboardStorageLabel();
+            return;
+        }
+
         try {
             const rows = await supabaseRequest('leaderboard_scores?select=entry_id,first_name,last_name,alias,score&order=score.desc,created_at.asc&limit=20');
             highScores = Array.isArray(rows) ? rows.map(mapRemoteScore) : [];
+            localStorage.setItem('neovici_scores', JSON.stringify(highScores));
+            leaderboardSyncState = 'remote';
             updateHighScoreUI();
         } catch (error) {
+            leaderboardSyncState = 'error';
             console.warn('Supabase leaderboard load failed, using local fallback.', error);
+            highScores = [...localHighScores];
+            updateHighScoreUI();
         }
+
+        updateLeaderboardStorageLabel();
     }
 
     async function insertRemoteRegistration(registration) {
-        if (!supabaseEnabled) return;
+        if (!isSupabaseEnabled()) return;
         await supabaseRequest('registrations', {
             method: 'POST',
             headers: { Prefer: 'return=minimal' },
@@ -808,7 +862,7 @@
     }
 
     async function insertRemoteScore(scoreEntry) {
-        if (!supabaseEnabled) return;
+        if (!isSupabaseEnabled()) return;
         await supabaseRequest('leaderboard_scores', {
             method: 'POST',
             headers: { Prefer: 'return=minimal' },
@@ -867,7 +921,8 @@
     let superModeFrames = 0;
     const player = { x: 340, y: 380, width: 40, height: 40, speed: 6 };
     let bullets = [], enemies = [], particles = [], cosmozDrops = [], bluffInvoices = [];
-    let highScores = JSON.parse(localStorage.getItem('neovici_scores')) || [];
+    const localHighScores = JSON.parse(localStorage.getItem('neovici_scores')) || [];
+    let highScores = isSupabaseEnabled() ? [] : [...localHighScores];
     const keys = {};
     const cosmozLogo = new Image();
     let cosmozLogoReady = false;
@@ -1113,6 +1168,10 @@
     function updateHighScoreUI() {
         const list = document.getElementById('hs-list'); list.innerHTML = '';
         const visibleScores = getVisibleLeaderboardScores();
+        if (visibleScores.length === 0 && leaderboardSyncState === 'loading') {
+            list.innerHTML = '<li style="text-align:center;">LOADING CLOUD SCORES...</li>';
+            return;
+        }
         visibleScores.forEach((entry, i) => {
             const fullName = (entry.firstName && entry.lastName)
                 ? `${entry.firstName} ${entry.lastName}`
@@ -1131,6 +1190,7 @@
         document.getElementById('result-savings').innerText = `${savingsValue.toLocaleString()} SEK`;
         document.getElementById('result-minus').innerText = `-${minusValue}`;
         document.getElementById('result-beaten').innerText = beatenPlayers;
+        setResultSyncStatus(isSupabaseEnabled() ? 'SYNC STATUS: SAVING TO CLOUD...' : 'SYNC STATUS: LOCAL ONLY', isSupabaseEnabled() ? '#8f8fb3' : '#d9b36c');
         document.getElementById('result-popup').style.display = 'flex';
     }
 
@@ -1435,8 +1495,12 @@
             savings: totalSavings,
             minus_points: totalMinusPoints
         }).then(() => {
+            setResultSyncStatus('SYNC STATUS: SAVED TO CLOUD', '#59ff59');
             loadRemoteHighScores();
         }).catch(error => {
+            leaderboardSyncState = 'error';
+            updateLeaderboardStorageLabel();
+            setResultSyncStatus('SYNC STATUS: CLOUD SAVE FAILED', '#ff7b7b');
             console.warn('Supabase leaderboard insert failed.', error);
         });
 
@@ -1819,6 +1883,7 @@
         localStorage.setItem('neovici_registrations', JSON.stringify(filtered));
     })();
 
+    updateLeaderboardStorageLabel();
     updateHighScoreUI();
     loadRemoteHighScores();
     updateDemoModeUI();
